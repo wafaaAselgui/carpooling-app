@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 
 class Vehicle extends Model
@@ -13,12 +14,16 @@ class Vehicle extends Model
         'brand',
         'model',
         'color',
-        'licence_plate',
+        'license_plate',
         'seats',
         'photo',
     ];
 
     public function user(): BelongsTo{
         return $this->belongsTo(User::class);
+    }
+
+    public function trips(): HasMany{
+        return $this->hasMany(Trip::class);
     }
 }

@@ -51,4 +51,8 @@ class User extends Authenticatable
     public function vehicles(): HasMany{
         return $this->hasMany(Vehicle::class);
     }
+
+    public function trips(): HasMany{
+        return $this->hasMany(Trip::class , 'driver_id');
+    }
 }
