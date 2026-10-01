@@ -1,4 +1,5 @@
 import {useEffect , useState} from 'react';
+import Login from './pages/Login';
 
 function App(){
   const [trips , setTrips] = useState([]);
@@ -10,24 +11,28 @@ function App(){
     .catch((error)=> console.error(error));
   },[]);
 
-  return(
-    <div>
-      <h1>Carpooling App</h1>
-      {trips.map((trip)=>(
-        <div key={trip.id}>
-          <h2>{trip.departure_city} → {trip.destination_city}</h2>
+  // return(
+  //   <div>
+  //     <h1>Carpooling App</h1>
+  //     {trips.map((trip)=>(
+  //       <div key={trip.id}>
+  //         <h2>{trip.departure_city} → {trip.destination_city}</h2>
 
-          <p>Driver: {trip.driver?.name}</p>
+  //         <p>Driver: {trip.driver?.name}</p>
 
-          <p>Vehicle: {trip.vehicle?.brad}{" "}{trip.vehicle?.model}</p>
+  //         <p>Vehicle: {trip.vehicle?.brad}{" "}{trip.vehicle?.model}</p>
 
-          <p>Price: {trip.price_per_seat} MAD</p>
+  //         <p>Price: {trip.price_per_seat} MAD</p>
         
         
-        </div>
-      ))}
-    </div>
-  );
+  //       </div>
+  //     ))}
+  //   </div>
+
+
+
+  return <Login/>;
+  
 }
 
 export default App;
