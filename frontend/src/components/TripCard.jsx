@@ -1,8 +1,9 @@
 import { Card, Button } from "react-bootstrap";
+import {Link} from "react-router-dom";
 
 function TripCard({ trip }) {
     return (
-        <Card className="mb-3">
+        <Card className="mb-3 h-100 shadow-sm">
             <Card.Body>
                 <Card.Title>
                     {trip.departure_city} → {trip.destination_city}
@@ -21,9 +22,20 @@ function TripCard({ trip }) {
                     <strong>Price:</strong> {trip.price_per_seat} MAD
                 </Card.Text>
 
-                <Button variant="primary">
-                    View trip
-                </Button>
+
+                <div className="d-flex gap-2">
+                    <Button variant="outline-primary"
+                        as={Link}
+                        to={`/trips/${trip.id}`}
+                    >
+                        View trip
+                    </Button>
+
+                    <Button variant="primary">
+                        Book
+                    </Button>
+                </div>
+
             </Card.Body>
         </Card>
     );

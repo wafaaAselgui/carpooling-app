@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Container, Row, Col } from "react-bootstrap";
 import TripCard from "../components/TripCard";
 
 function Trips() {
@@ -19,20 +20,23 @@ function Trips() {
         })
             .then((response) => response.json())
             .then((data) => {
-                console.log("Trips:", data);
                 setTrips(data);
             })
             .catch((error) => console.error(error));
     }, []);
 
     return (
-        <div>
-            <h1>Carpooling App</h1>
+        <Container className="py-4">
+            <h1 className="mb-4">Available Trips</h1>
 
-            {trips.map((trip) => (
-                <TripCard key={trip.id} trip={trip} />
-            ))}
-        </div>
+            <Row>
+                {trips.map((trip) => (
+                    <Col key={trip.id} xs={12} md={6} lg={4}>
+                        <TripCard trip={trip} />
+                    </Col>
+                ))}
+            </Row>
+        </Container>
     );
 }
 
