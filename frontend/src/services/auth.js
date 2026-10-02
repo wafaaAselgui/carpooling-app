@@ -23,3 +23,13 @@ export const logout = async (token)=>{
 
     return response.data;
 }
+
+export const getCurrentUser = async (token) =>{
+    const response = await api.get("/user",{
+        headers:{
+            Authorization:`Bearer ${token }`
+        },
+    });
+
+    return response.data;
+}

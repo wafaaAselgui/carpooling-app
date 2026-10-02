@@ -1,15 +1,39 @@
-import {createContext , useContext, useState} from "react";
-
+import {createContext , useContext, useEffect, useState} from "react";
+import {getCurrentUser} from "../services/auth";
 const AuthContext = createContext();
 
 export function AuthProvider({children}){
-    const [user, setUser] = useState(null);
+    const [user, setUser]=useState(null);
+    const [loading, setLoading]=useState(true);
 
+    useEffect(()=>{
+        const token= localStorage.getItem("token");
+
+        if(!token){
+            setLoading(false);
+            return;
+        }
+
+        getCurrentUser(token)
+            .then((userData)=>{
+                console.log("Current user from API:", userData);
+                setUser(userData);
+            })
+            .catch((error)=>{
+                console.log("getCurrentUser failed:", error.response?.status);
+                console.log("Error:", error.response?.data);
+                //localStorage.removeItem("token");
+                setUser(null);
+            })
+            .finally(()=>{
+                setLoading(false);
+            });
+    },[]);
+    
     const loginUser = (userData , token) => {
+        console.log("Token received:", token);
         localStorage.setItem("token",token);
         setUser(userData);
-
-        console.log("AuthContext user:", userData);
     };
 
     const logoutUser = ()=>{
@@ -18,9 +42,10 @@ export function AuthProvider({children}){
     };
 
     return(
-        <AuthContext.Provider value={{user,
-            loginUser,
-            logoutUser}}
+        <AuthContext.Provider value={{ user,
+                loading,
+                loginUser,
+                logoutUser,}}
         >
             {children}
         </AuthContext.Provider>
