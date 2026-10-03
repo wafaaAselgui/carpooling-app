@@ -11,4 +11,10 @@ class TripController extends Controller
 
         return response()->json($trips);
     }
+
+    public function show($id){
+        $trip=Trip::with(['driver' , 'vehicle'])->findOrFail($id);
+
+        return response()->json($trip);
+    }
 }
