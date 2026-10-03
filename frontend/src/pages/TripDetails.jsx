@@ -1,11 +1,16 @@
 import { useEffect, useState } from "react";
 import {Link,useParams} from "react-router-dom";
 import { Card, Button, Container, Row, Col } from "react-bootstrap";
+import { createBooking } from "../services/booking";
 
 
 function TripDetails(){
     const {id} = useParams();
+
     const [trip, setTrip]= useState(null);
+    const [seats, setSeats]=useState(1);
+    const [bookingMessage, setBookingMessage] = useState("");
+    const [booked, setBooked] = useState(false);
 
     useEffect(()=>{
         const token=localStorage.getItem("token");
@@ -34,6 +39,27 @@ function TripDetails(){
     if(!trip){
         return <p>Loading...</p>
     }
+
+
+    const handleBooking = async()=>{
+        try{
+            const data=await createBooking(trip.id , seats);
+
+            setBookingMessage(data.message);
+            setBooked(true);
+            
+            setTrip({
+                ...trip,
+                available_seats: trip.available_seats - seats,
+            });
+        } catch (error){
+            setBookingMessage(
+                error.response?.data?.message || "Booking failed."
+            );
+        }
+    };
+
+
     return(
          <Container className="py-4">
             <Button
@@ -70,6 +96,21 @@ function TripDetails(){
                                 {trip.available_seats}
                             </p>
 
+                            <div className="mb-3">
+                                <label className="form-label">
+                                    Number of seats
+                                </label>
+
+                                <input
+                                    type="number"
+                                    className="form-control"
+                                    min="1"
+                                    max={trip.available_seats}
+                                    value={seats}
+                                    onChange={(event) => setSeats(Number(event.target.value))}
+                                />
+                            </div>
+                            
                             <p>
                                 <strong>Price:</strong>{" "}
                                 {trip.price_per_seat} MAD
@@ -105,8 +146,19 @@ function TripDetails(){
                         {trip.description || "No description provided."}
                     </p>
 
-                    <Button variant="primary">
-                        Book this trip
+                    
+                    {bookingMessage && (
+                        <div className="alert alert-info mt-3">
+                            {bookingMessage}
+                        </div>
+                    )}
+                    
+                    <Button
+                        variant={booked ? "success" : "primary"}
+                        onClick={handleBooking}
+                        disabled={booked || trip.available_seats === 0}
+                    >
+                        {booked ? "Booked ✓" : "Book this trip"}
                     </Button>
                 </Card.Body>
             </Card>

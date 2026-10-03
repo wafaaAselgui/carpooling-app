@@ -27,7 +27,8 @@ Route::post('/logout' , [AuthController::class , 'logout'])
 
 Route::post('/bookings', [BookingController::class, 'store'])
     ->middleware('auth:sanctum');
-
+Route::get('/bookings', [BookingController::class, 'index'])
+    ->middleware('auth:sanctum');
 
 
 

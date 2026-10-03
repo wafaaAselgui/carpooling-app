@@ -57,4 +57,13 @@ class BookingController extends Controller
 
 
     }
+
+
+    public function index(Request $request){
+        $bookings = Booking::with(['trip' , 'trip.vehicle'])
+            ->where('user_id', $request->user()->id)
+            ->get();
+
+        return response()->json($bookings);
+    }
 }
