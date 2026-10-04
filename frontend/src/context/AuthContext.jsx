@@ -35,7 +35,6 @@ export function AuthProvider({children}){
         console.log("Token received:", token);
         localStorage.setItem("token",token);
         setUser(userData);
-        navigate("/");
     };
 
     const logoutUser = async () => {

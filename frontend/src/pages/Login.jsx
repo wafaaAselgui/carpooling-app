@@ -38,7 +38,7 @@ function Login(){
     
         }catch(error){
             setError(
-                error.response?.data?.message || "sSomething went wrong."
+                error.response?.data?.message || "Something went wrong."
             );
         }finally{
             setLoading(false);
