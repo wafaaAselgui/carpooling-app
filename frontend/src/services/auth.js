@@ -27,7 +27,7 @@ export const logout = async (token)=>{
 export const getCurrentUser = async (token) =>{
     const response = await api.get("/user",{
         headers:{
-            Authorization:`Bearer ${token }`
+            Authorization:`Bearer ${token}`
         },
     });
 

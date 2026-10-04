@@ -1,34 +1,29 @@
 import { useEffect, useState } from "react";
-import {Link,useParams} from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { Card, Button, Container, Row, Col } from "react-bootstrap";
 import { createBooking } from "../services/booking";
 
 
 function TripDetails(){
     const {id} = useParams();
+    const navigate = useNavigate();
 
     const [trip, setTrip]= useState(null);
     const [seats, setSeats]=useState(1);
     const [bookingMessage, setBookingMessage] = useState("");
     const [booked, setBooked] = useState(false);
 
+
     useEffect(()=>{
-        const token=localStorage.getItem("token");
-        
-        if(!token){
-            return;
-        }
         
         fetch(`http://127.0.0.1:8000/api/trips/${id}`,{
             headers:{
                 Accept:"application/json",
-                Authorization: `Bearer ${token}`
             },
 
         })
          .then((response)=>response.json())
          .then((data)=>{
-            console.log("Trip:", data);
             setTrip(data);
          })  
          .catch((error)=>console.error(error));
@@ -42,8 +37,14 @@ function TripDetails(){
 
 
     const handleBooking = async()=>{
+        const token = localStorage.getItem("token");
+
+        if (!token) {
+            navigate("/login");
+            return;
+        }        
         try{
-            const data=await createBooking(trip.id , seats);
+            const data = await createBooking(trip.id , seats);
 
             setBookingMessage(data.message);
             setBooked(true);
@@ -52,6 +53,7 @@ function TripDetails(){
                 ...trip,
                 available_seats: trip.available_seats - seats,
             });
+            
         } catch (error){
             setBookingMessage(
                 error.response?.data?.message || "Booking failed."

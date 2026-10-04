@@ -6,16 +6,10 @@ function Trips() {
     const [trips, setTrips] = useState([]);
 
     useEffect(() => {
-        const token = localStorage.getItem("token");
-
-        if (!token) {
-            return;
-        }
-
+       
         fetch("http://127.0.0.1:8000/api/trips", {
             headers: {
                 Accept: "application/json",
-                Authorization: `Bearer ${token}`,
             },
         })
             .then((response) => response.json())

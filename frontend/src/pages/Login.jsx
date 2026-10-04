@@ -1,10 +1,13 @@
-import {useState} from "react";
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {Form , Button , Card , Container , Row , Col , Alert } from "react-bootstrap";
 import {login} from "../services/auth";
 import { useAuth } from "../context/AuthContext";
 
 function Login(){
-   
+    
+    const navigate = useNavigate();
+
     const [formData , setFormData] = useState({
         email:"",
         password:"",
@@ -31,6 +34,7 @@ function Login(){
 
             loginUser(data.user, data.token)
             
+            navigate("/");
     
         }catch(error){
             setError(

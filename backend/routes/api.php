@@ -12,11 +12,8 @@ Route::get('/user', function (Request $request) {
 
 
 
-Route::get('/trips' , [TripController::class , 'index'])
-    ->middleware('auth:sanctum');
-Route::get('/trips/{id}',[TripController::class, 'show'])
-    ->middleware('auth:sanctum');
-
+Route::get('/trips', [TripController::class, 'index']);
+Route::get('/trips/{id}', [TripController::class, 'show']);
 
 
 Route::post('/register' , [AuthController::class , 'register']);

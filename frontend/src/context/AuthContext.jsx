@@ -1,10 +1,11 @@
 import {createContext , useContext, useEffect, useState} from "react";
-import {getCurrentUser} from "../services/auth";
+import { getCurrentUser, logout } from "../services/auth";
 const AuthContext = createContext();
 
 export function AuthProvider({children}){
     const [user, setUser]=useState(null);
     const [loading, setLoading]=useState(true);
+    
 
     useEffect(()=>{
         const token= localStorage.getItem("token");
@@ -34,11 +35,22 @@ export function AuthProvider({children}){
         console.log("Token received:", token);
         localStorage.setItem("token",token);
         setUser(userData);
+        navigate("/");
     };
 
-    const logoutUser = ()=>{
-        localStorage.removeItem("token");
-        setUser(null);
+    const logoutUser = async () => {
+        const token = localStorage.getItem("token");
+
+        try {
+            if (token) {
+                await logout(token);
+            }
+        } catch (error) {
+            console.error("Logout failed:", error);
+        } finally {
+            localStorage.removeItem("token");
+            setUser(null);
+        }
     };
 
     return(

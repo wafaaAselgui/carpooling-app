@@ -18,3 +18,15 @@ export const createBooking = async (tripId , seats) => {
 
     return response.data;
 }
+
+export const getMyBookings = async () => {
+    const token = localStorage.getItem("token");
+
+    const response = await api.get("/bookings", {
+        headers: {
+            Authorization: `Bearer ${token}`,
+        },
+    });
+
+    return response.data;
+};
