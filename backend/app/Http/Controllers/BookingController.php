@@ -66,4 +66,27 @@ class BookingController extends Controller
 
         return response()->json($bookings);
     }
+
+
+    public function destroy(Request $request, $id){
+        $booking = DB::transaction(function () use ($request, $id){
+            $booking = Booking::where('id' , $id)
+                ->where('user_id' , $request->user()->id)
+                ->firstOrFail();
+
+            $trip = Trip::where('id',$booking->trip_id)
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            $trip->increment('available_seats',$booking->seats);
+
+            $booking->delete();
+
+            return $booking;
+        });
+
+        return response()->json([
+            'message'=>'Booking cancelled successfully',
+        ]);
+    }
 }

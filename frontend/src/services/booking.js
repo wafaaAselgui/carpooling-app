@@ -30,3 +30,16 @@ export const getMyBookings = async () => {
 
     return response.data;
 };
+
+export const cancelBooking = async (bookingId) => {
+    const token = localStorage.getItem("token");
+
+    const response = await api.delete(`/bookings/${bookingId}`,{
+        headers: {
+            Authorization:`Bearer ${token}`,
+        },
+    });
+
+    return response.data;
+
+};

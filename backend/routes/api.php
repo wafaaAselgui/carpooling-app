@@ -26,7 +26,8 @@ Route::post('/bookings', [BookingController::class, 'store'])
     ->middleware('auth:sanctum');
 Route::get('/bookings', [BookingController::class, 'index'])
     ->middleware('auth:sanctum');
-
+Route::delete('/bookings/{id}', [BookingController::class, 'destroy'])
+    ->middleware('auth:sanctum');
 
 
 
