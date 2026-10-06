@@ -25,6 +25,10 @@ Route::middleware('auth:sanctum')->group(function () {
     // Vehicles
     Route::get('/vehicles', [VehicleController::class, 'index']);
     Route::post('/vehicles', [VehicleController::class, 'store']);
+
+    // Driver trip management
+    Route::get('/driver/trips', [TripController::class, 'driverTrips']);
+    Route::patch('/driver/trips/{id}/status', [TripController::class, 'updateStatus']);
 });
 
 

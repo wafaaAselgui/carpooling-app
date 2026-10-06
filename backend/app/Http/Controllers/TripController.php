@@ -72,4 +72,54 @@ class TripController extends Controller
             'trip'    => $trip,
         ], 201);
     }
+
+    /**
+     * Get all trips published by the authenticated driver,
+     * including passenger bookings.
+     */
+    public function driverTrips(Request $request)
+    {
+        $trips = Trip::with(['vehicle', 'bookings.user'])
+            ->where('driver_id', $request->user()->id)
+            ->orderBy('departure_time', 'desc')
+            ->get();
+
+        return response()->json($trips);
+    }
+
+    /**
+     * Update the status of a driver's trip (e.g., mark completed or cancelled).
+     */
+    public function updateStatus(Request $request, $id)
+    {
+        $request->validate([
+            'status' => ['required', Rule::in(['scheduled', 'in_progress', 'completed', 'cancelled'])],
+        ]);
+
+        // Ensure the trip exists and belongs to the authenticated driver
+        $trip = Trip::where('driver_id', $request->user()->id)->findOrFail($id);
+
+        // Business rule: Cannot change status of an already completed or cancelled trip
+        if (in_array($trip->status, ['completed', 'cancelled'])) {
+            return response()->json([
+                'message' => "Cannot modify a trip that is already {$trip->status}."
+            ], 422);
+        }
+
+        $newStatus = $request->status;
+        $trip->status = $newStatus;
+        $trip->save();
+
+        // If driver cancels the trip, cancel all active passenger bookings
+        if ($newStatus === 'cancelled') {
+            $trip->bookings()->where('status', '!=', 'cancelled')->update([
+                'status' => 'cancelled'
+            ]);
+        }
+
+        return response()->json([
+            'message' => "Trip status updated to {$newStatus}.",
+            'trip'    => $trip->load(['vehicle', 'bookings.user']),
+        ]);
+    }
 }

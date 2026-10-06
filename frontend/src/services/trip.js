@@ -28,3 +28,39 @@ export const createTrip = async (tripData) => {
 
     return response.data;
 };
+
+/**
+ * Fetch all trips published by the logged-in driver with passenger bookings.
+ */
+export const getDriverTrips = async () => {
+    const token = localStorage.getItem("token");
+
+    const response = await api.get("/driver/trips", {
+        headers: {
+            Authorization: `Bearer ${token}`,
+        },
+    });
+
+    return response.data;
+};
+
+/**
+ * Update the status of a driver's trip (e.g. in_progress, completed, cancelled).
+ * @param {number|string} tripId
+ * @param {string} status
+ */
+export const updateTripStatus = async (tripId, status) => {
+    const token = localStorage.getItem("token");
+
+    const response = await api.patch(
+        `/driver/trips/${tripId}/status`,
+        { status },
+        {
+            headers: {
+                Authorization: `Bearer ${token}`,
+            },
+        }
+    );
+
+    return response.data;
+};

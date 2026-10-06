@@ -7,6 +7,7 @@ import MyBookings from "./pages/MyBooking";
 import CreateTrip from "./pages/CreateTrip";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
+import DriverTrips from "./pages/DriverTrips";
 
 import { useAuth } from "./context/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -39,6 +40,10 @@ function App() {
 
                 <Nav.Link as={Link} to="/my-bookings">
                   My Bookings
+                </Nav.Link>
+
+                <Nav.Link as={Link} to="/driver/trips">
+                    My Offered Trips
                 </Nav.Link>
 
                 <Nav.Link onClick={handleLogout}>
@@ -83,6 +88,15 @@ function App() {
             </ProtectedRoute>
           }
         />
+        <Route
+            path="/driver/trips"
+            element={
+                <ProtectedRoute>
+                    <DriverTrips />
+                </ProtectedRoute>
+            }
+        />     
+           
       </Routes>
     </BrowserRouter>
   );
