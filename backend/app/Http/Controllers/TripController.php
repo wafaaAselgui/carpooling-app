@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Trip;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class TripController extends Controller
 {
@@ -35,5 +36,40 @@ class TripController extends Controller
         $trip = Trip::with(['driver', 'vehicle'])->findOrFail($id);
 
         return response()->json($trip);
+    }
+
+    // app/Http/Controllers/TripController.php
+
+    public function store(Request $request)
+    {
+        $validated = $request->validate([
+            'departure_city'      => 'required|string|max:100',
+            'departure_address'   => 'required|string|max:255',
+            'destination_city'    => 'required|string|max:100',
+            'destination_address' => 'required|string|max:255',
+            'departure_time'      => 'required|date|after:now',
+            'total_seats'         => 'required|integer|min:1|max:8',
+            'price_per_seat'      => 'required|numeric|min:0',
+            'vehicle_id'          => [
+                'required',
+                Rule::exists('vehicles', 'id')->where(function ($query) use ($request) {
+                    return $query->where('user_id', $request->user()->id);
+                }),
+            ],
+        ]);
+
+        $trip = Trip::create([
+            ...$validated,
+            'driver_id'       => $request->user()->id,
+            'available_seats' => $validated['total_seats'],
+            'status'          => 'scheduled', // Matches the migration enum
+        ]);
+
+        $trip->load(['driver', 'vehicle']);
+
+        return response()->json([
+            'message' => 'Trip created successfully.',
+            'trip'    => $trip,
+        ], 201);
     }
 }

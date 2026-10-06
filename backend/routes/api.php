@@ -5,6 +5,10 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\TripController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\VehicleController;
+
+
+
 
 Route::get('/user', function (Request $request) {
     return $request->user();
@@ -14,6 +18,15 @@ Route::get('/user', function (Request $request) {
 
 Route::get('/trips', [TripController::class, 'index']);
 Route::get('/trips/{id}', [TripController::class, 'show']);
+Route::middleware('auth:sanctum')->group(function () {
+    // Trips
+    Route::post('/trips', [TripController::class, 'store']);
+
+    // Vehicles
+    Route::get('/vehicles', [VehicleController::class, 'index']);
+    Route::post('/vehicles', [VehicleController::class, 'store']);
+});
+
 
 
 Route::post('/register' , [AuthController::class , 'register']);

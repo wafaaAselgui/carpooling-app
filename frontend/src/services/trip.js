@@ -1,23 +1,30 @@
+// frontend/src/services/trip.js
 import api from "./api";
 
-/**
- * Fetch trips with optional filter parameters.
- * @param {Object} filters - { departure_city, destination_city, date }
- */
 export const getTrips = async (filters = {}) => {
-    // Axios converts the `params` object into query string parameters automatically:
-    // e.g. { departure_city: 'Casablanca' } -> /trips?departure_city=Casablanca
     const response = await api.get("/trips", {
         params: filters,
     });
+    return response.data;
+};
 
+export const getTripById = async (id) => {
+    const response = await api.get(`/trips/${id}`);
     return response.data;
 };
 
 /**
- * Fetch a single trip by ID with its driver and vehicle relations.
+ * Create a new trip (driver only).
+ * @param {Object} tripData - trip fields including vehicle_id
  */
-export const getTripById = async (id) => {
-    const response = await api.get(`/trips/${id}`);
+export const createTrip = async (tripData) => {
+    const token = localStorage.getItem("token");
+
+    const response = await api.post("/trips", tripData, {
+        headers: {
+            Authorization: `Bearer ${token}`,
+        },
+    });
+
     return response.data;
 };
