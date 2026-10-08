@@ -18,4 +18,9 @@ class Booking extends Model
     public function trip():BelongsTo{
         return $this->belongsTo(Trip::class);
     }
+
+    public function review(): \Illuminate\Database\Eloquent\Relations\HasOne
+    {
+        return $this->hasOne(Review::class);
+    }
 }

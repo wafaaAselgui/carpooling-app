@@ -6,7 +6,7 @@ use App\Http\Controllers\TripController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\VehicleController;
-
+use App\Http\Controllers\ReviewController;
 
 
 
@@ -47,4 +47,10 @@ Route::delete('/bookings/{id}', [BookingController::class, 'destroy'])
     ->middleware('auth:sanctum');
 
 
+// Public route to view any driver's reviews & average rating
+Route::get('/drivers/{id}/reviews', [ReviewController::class, 'driverReviews']);
 
+// Protected route to leave a review
+Route::middleware('auth:sanctum')->group(function () {
+    Route::post('/reviews', [ReviewController::class, 'store']);
+});
