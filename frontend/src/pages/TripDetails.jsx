@@ -155,6 +155,18 @@ function TripDetails() {
                             <p className="mb-2">
                                 <strong>Driver:</strong> {trip.driver?.name}
                             </p>
+                            <p className="mb-2 d-flex align-items-center gap-2">
+                                <strong>Driver:</strong> {trip.driver?.name}
+                                {trip.driver?.average_rating ? (
+                                    <Badge bg="warning" text="dark">
+                                        ★ {Number(trip.driver.average_rating).toFixed(1)} ({trip.driver.reviews_count || 0})
+                                    </Badge>
+                                ) : (
+                                    <Badge bg="light" text="secondary" className="border">
+                                        New Driver
+                                    </Badge>
+                                )}
+                            </p>                            
                             <p className="mb-2">
                                 <strong>Vehicle:</strong> {trip.vehicle?.brand} {trip.vehicle?.model}
                             </p>

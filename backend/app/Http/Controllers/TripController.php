@@ -10,7 +10,13 @@ class TripController extends Controller
 {
     public function index(Request $request)
     {
-        $trips = Trip::with(['driver', 'vehicle'])
+        $trips = Trip::with([
+            'vehicle',
+            'driver' => function ($query) {
+                $query->withAvg('reviewsReceived as average_rating', 'rating')
+                    ->withCount('reviewsReceived as reviews_count');
+            },
+        ])
             // Filter by departure city if provided
             ->when($request->filled('departure_city'), function ($query) use ($request) {
                 $query->where('departure_city', 'like', '%' . $request->departure_city . '%');
@@ -23,8 +29,9 @@ class TripController extends Controller
             ->when($request->filled('date'), function ($query) use ($request) {
                 $query->whereDate('departure_time', $request->date);
             })
-            // Optional: hide fully-booked trips from public discovery
+            // Hide fully-booked trips and only show open scheduled rides
             ->where('available_seats', '>', 0)
+            ->where('status', 'scheduled')
             ->orderBy('departure_time', 'asc')
             ->get();
 
@@ -33,11 +40,16 @@ class TripController extends Controller
 
     public function show($id)
     {
-        $trip = Trip::with(['driver', 'vehicle'])->findOrFail($id);
+        $trip = Trip::with([
+            'vehicle',
+            'driver' => function ($query) {
+                $query->withAvg('reviewsReceived as average_rating', 'rating')
+                    ->withCount('reviewsReceived as reviews_count');
+            },
+        ])->findOrFail($id);
 
         return response()->json($trip);
     }
-
     // app/Http/Controllers/TripController.php
 
     public function store(Request $request)
