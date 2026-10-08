@@ -12,6 +12,12 @@ import DriverTrips from "./pages/DriverTrips";
 import { useAuth } from "./context/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 
+
+
+import AdminDashboard from "./pages/AdminDashboard";
+import AdminRoute from "./components/AdminRoute";
+
+
 function App() {
   const { user, logoutUser } = useAuth();
 
@@ -21,6 +27,13 @@ function App() {
 
   return (
     <BrowserRouter>
+
+      {user?.is_admin && (
+          <Nav.Link as={Link} to="/admin" className="text-warning fw-bold">
+              Admin Panel
+          </Nav.Link>
+      )}
+
       <Navbar bg="dark" variant="dark" expand="lg">
         <Container>
           <Navbar.Brand as={Link} to="/">
@@ -96,7 +109,15 @@ function App() {
                 </ProtectedRoute>
             }
         />     
-           
+        
+        <Route
+            path="/admin"
+            element={
+                <AdminRoute>
+                    <AdminDashboard />
+                </AdminRoute>
+            }
+        />         
       </Routes>
     </BrowserRouter>
   );

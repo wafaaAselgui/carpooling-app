@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\VehicleController;
 use App\Http\Controllers\ReviewController;
+use App\Http\Controllers\AdminController;
 
 
 
@@ -53,4 +54,13 @@ Route::get('/drivers/{id}/reviews', [ReviewController::class, 'driverReviews']);
 // Protected route to leave a review
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/reviews', [ReviewController::class, 'store']);
+});
+
+
+
+Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->group(function () {
+    Route::get('/stats', [AdminController::class, 'stats']);
+    Route::get('/users', [AdminController::class, 'users']);
+    Route::get('/trips', [AdminController::class, 'trips']);
+    Route::patch('/trips/{id}/cancel', [AdminController::class, 'cancelTrip']);
 });
