@@ -37,12 +37,20 @@ class AuthController extends Controller
         ]);
 
         $user = User::where('email' , $validated['email'])->first();
-
+        
+        
+        if ($user->is_banned) {
+            return response()->json([
+                'message' => 'Votre compte a été suspendu par un administrateur.'
+            ], 403);
+        }
+        
         if(!$user || !Hash::check($validated['password'],$user->password)){
             return response()->json([
                 'message'=>'Invalid credentials',
             ],401);
         }
+
         $token = $user->createToken('auth_token')->plainTextToken;
 
         return response()->json([
