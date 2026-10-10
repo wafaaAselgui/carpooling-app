@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Container, Row, Col, Card, Table, Badge, Button, Tabs, Tab, Spinner, Alert } from "react-bootstrap";
-import { getAdminStats, getAdminUsers, getAdminTrips, adminCancelTrip } from "../services/admin";
+import { getAdminStats, getAdminUsers, getAdminTrips, adminCancelTrip, toggleBanUser } from "../services/admin";
 
 function AdminDashboard() {
     const [stats, setStats] = useState(null);
@@ -40,6 +40,18 @@ function AdminDashboard() {
             loadAllData();
         } catch (err) {
             alert(err.response?.data?.message || "Échec de l'annulation.");
+        }
+    };
+
+    const handleToggleBan = async (user) => {
+        const actionLabel = user.is_banned ? "réactiver" : "suspendre";
+        if (!window.confirm(`Confirmer la demande : ${actionLabel} le compte de ${user.name} ?`)) return;
+
+        try {
+            await toggleBanUser(user.id);
+            loadAllData();
+        } catch (err) {
+            alert(err.response?.data?.message || `Échec lors de l'opération pour ${actionLabel} l'utilisateur.`);
         }
     };
 
@@ -176,13 +188,15 @@ function AdminDashboard() {
                                         <th>Nom</th>
                                         <th>Email</th>
                                         <th>Rôle</th>
+                                        <th>Statut</th>
                                         <th>Véhicules</th>
                                         <th>Inscrit le</th>
+                                        <th>Action</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {users.map((u) => (
-                                        <tr key={u.id}>
+                                        <tr key={u.id} className={u.is_banned ? "table-danger" : ""}>
                                             <td>{u.id}</td>
                                             <td><strong>{u.name}</strong></td>
                                             <td>{u.email}</td>
@@ -193,8 +207,28 @@ function AdminDashboard() {
                                                     <Badge bg="secondary">Membre</Badge>
                                                 )}
                                             </td>
+                                            <td>
+                                                {u.is_banned ? (
+                                                    <Badge bg="danger">Suspendu</Badge>
+                                                ) : (
+                                                    <Badge bg="success">Actif</Badge>
+                                                )}
+                                            </td>
                                             <td>{u.vehicles_count ?? 0}</td>
                                             <td>{new Date(u.created_at).toLocaleDateString()}</td>
+                                            <td>
+                                                {!u.is_admin ? (
+                                                    <Button
+                                                        variant={u.is_banned ? "outline-success" : "outline-danger"}
+                                                        size="sm"
+                                                        onClick={() => handleToggleBan(u)}
+                                                    >
+                                                        {u.is_banned ? "Réactiver" : "Bannir"}
+                                                    </Button>
+                                                ) : (
+                                                    <span className="text-muted small">—</span>
+                                                )}
+                                            </td>
                                         </tr>
                                     ))}
                                 </tbody>

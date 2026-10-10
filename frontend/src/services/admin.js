@@ -28,3 +28,8 @@ export const adminCancelTrip = async (tripId) => {
     const res = await api.patch(`/admin/trips/${tripId}/cancel`, {}, getAuthHeaders());
     return res.data;
 };
+
+export const toggleBanUser = async (userId) => {
+    const res = await api.patch(`/admin/users/${userId}/toggle-ban`, {}, getAuthHeaders());
+    return res.data;
+};

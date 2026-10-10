@@ -90,4 +90,34 @@ class AdminController extends Controller
             'trip'    => $trip,
         ]);
     }
+
+    /**
+     * Suspendre ou réactiver un utilisateur
+     */
+    public function toggleBanUser(Request $request, $id)
+    {
+        $user = User::findOrFail($id);
+
+        // Sécurité : l'administrateur ne peut pas se bannir lui-même
+        if ($user->id === $request->user()->id) {
+            return response()->json([
+                'message' => 'Vous ne pouvez pas suspendre votre propre compte.'
+            ], 422);
+        }
+
+        $user->is_banned = !$user->is_banned;
+        $user->save();
+
+        // Révocation immédiate des jetons d'accès si le compte est suspendu
+        if ($user->is_banned) {
+            $user->tokens()->delete();
+        }
+
+        $statusMessage = $user->is_banned ? 'suspendu' : 'réactivé';
+
+        return response()->json([
+            'message' => "L'utilisateur {$user->name} a été {$statusMessage}.",
+            'user'    => $user,
+        ]);
+    }
 }
