@@ -10,32 +10,46 @@ class TripController extends Controller
 {
     public function index(Request $request)
     {
-        $trips = Trip::with([
-            'vehicle',
-            'driver' => function ($query) {
-                $query->withAvg('reviewsReceived as average_rating', 'rating')
-                    ->withCount('reviewsReceived as reviews_count');
-            },
-        ])
-            // Filter by departure city if provided
-            ->when($request->filled('departure_city'), function ($query) use ($request) {
-                $query->where('departure_city', 'like', '%' . $request->departure_city . '%');
-            })
-            // Filter by destination city if provided
-            ->when($request->filled('destination_city'), function ($query) use ($request) {
-                $query->where('destination_city', 'like', '%' . $request->destination_city . '%');
-            })
-            // Filter by departure date if provided (expects format YYYY-MM-DD)
-            ->when($request->filled('date'), function ($query) use ($request) {
-                $query->whereDate('departure_time', $request->date);
-            })
-            // Hide fully-booked trips and only show open scheduled rides
-            ->where('available_seats', '>', 0)
+        $query = Trip::with(['driver:id,name', 'vehicle'])
             ->where('status', 'scheduled')
-            ->orderBy('departure_time', 'asc')
-            ->get();
+            ->where('available_seats', '>', 0);
 
-        return response()->json($trips);
+        // Filtre Ville de départ
+        if ($request->filled('departure_city')) {
+            $query->where('departure_city', 'like', '%' . $request->departure_city . '%');
+        }
+
+        // Filtre Ville de destination
+        if ($request->filled('destination_city')) {
+            $query->where('destination_city', 'like', '%' . $request->destination_city . '%');
+        }
+
+        // Filtre Date de départ (même jour ou ultérieur)
+        if ($request->filled('date')) {
+            $query->whereDate('departure_time', $request->date);
+        }
+
+        // Filtre Nombre de places minimum demandées
+        if ($request->filled('seats')) {
+            $query->where('available_seats', '>=', (int) $request->seats);
+        }
+
+        // Filtre Prix maximum
+        if ($request->filled('max_price')) {
+            $query->where('price_per_seat', '<=', (float) $request->max_price);
+        }
+
+        // Options de tri
+        $sortBy = $request->get('sort_by', 'departure_time');
+        $sortDirection = $request->get('sort_dir', 'asc');
+
+        if (in_array($sortBy, ['departure_time', 'price_per_seat', 'available_seats'])) {
+            $query->orderBy($sortBy, $sortDirection === 'desc' ? 'desc' : 'asc');
+        } else {
+            $query->orderBy('departure_time', 'asc');
+        }
+
+        return response()->json($query->paginate(15));
     }
 
     public function show($id)
