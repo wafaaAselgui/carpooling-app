@@ -1,32 +1,33 @@
 import api from "./api";
 
-/**
- * Fetch all vehicles owned by the logged-in user.
- */
-export const getMyVehicles = async () => {
+const getHeaders = (isMultipart = false) => {
     const token = localStorage.getItem("token");
-
-    const response = await api.get("/vehicles", {
+    return {
         headers: {
             Authorization: `Bearer ${token}`,
+            ...(isMultipart ? { "Content-Type": "multipart/form-data" } : {}),
         },
-    });
-
-    return response.data;
+    };
 };
 
-/**
- * Register a new vehicle.
- * @param {Object} vehicleData - { brand, model, color, license_plate, seats }
- */
-export const createVehicle = async (vehicleData) => {
-    const token = localStorage.getItem("token");
+export const getMyVehicles = async () => {
+    const res = await api.get("/vehicles", getHeaders());
+    return res.data;
+};
 
-    const response = await api.post("/vehicles", vehicleData, {
-        headers: {
-            Authorization: `Bearer ${token}`,
-        },
+export const createVehicle = async (vehicleData, photoFile) => {
+    const formData = new FormData();
+    Object.keys(vehicleData).forEach((key) => {
+        formData.append(key, vehicleData[key]);
     });
+    if (photoFile) {
+        formData.append("photo", photoFile);
+    }
+    const res = await api.post("/vehicles", formData, getHeaders(true));
+    return res.data;
+};
 
-    return response.data;
+export const deleteVehicle = async (id) => {
+    const res = await api.delete(`/vehicles/${id}`, getHeaders());
+    return res.data;
 };

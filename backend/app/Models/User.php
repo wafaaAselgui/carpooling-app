@@ -26,10 +26,23 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'phone',
+        'bio',
+        'avatar_path',
+        'cin_number',
+        'cin_document_path',
+        'verification_status',
         'is_admin',
         'is_banned',
     ];
+    protected $appends = ['avatar_url'];
 
+    public function getAvatarUrlAttribute()
+    {
+        return $this->avatar_path 
+            ? asset('storage/' . $this->avatar_path) 
+            : null;
+    }    
     /**
      * The attributes that should be hidden for serialization.
      *

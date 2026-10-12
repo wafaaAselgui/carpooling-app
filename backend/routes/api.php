@@ -3,6 +3,7 @@
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BookingController;
+use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\TripController;
 use App\Http\Controllers\VehicleController;
@@ -32,18 +33,25 @@ Route::get('/drivers/{id}/reviews', [ReviewController::class, 'driverReviews']);
 |--------------------------------------------------------------------------
 */
 Route::middleware(['auth:sanctum', 'check.banned'])->group(function () {
-    // Current user profile & logout
+    // Current user base info & logout
     Route::get('/user', function (Request $request) {
         return $request->user();
     });
     Route::post('/logout', [AuthController::class, 'logout']);
 
-    // Trips
-    Route::post('/trips', [TripController::class, 'store']);
+    // Profile & Identity Verification (CIN)
+    Route::get('/profile', [ProfileController::class, 'show']);
+    Route::put('/profile', [ProfileController::class, 'update']);
+    Route::post('/profile/avatar', [ProfileController::class, 'uploadAvatar']);
+    Route::post('/profile/verify', [ProfileController::class, 'submitVerification']);
 
     // Vehicles
     Route::get('/vehicles', [VehicleController::class, 'index']);
     Route::post('/vehicles', [VehicleController::class, 'store']);
+    Route::delete('/vehicles/{id}', [VehicleController::class, 'destroy']);
+
+    // Trips
+    Route::post('/trips', [TripController::class, 'store']);
 
     // Driver trip management
     Route::get('/driver/trips', [TripController::class, 'driverTrips']);
@@ -69,4 +77,5 @@ Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->group(function ()
     Route::get('/trips', [AdminController::class, 'trips']);
     Route::patch('/trips/{id}/cancel', [AdminController::class, 'cancelTrip']);
     Route::patch('/users/{id}/toggle-ban', [AdminController::class, 'toggleBanUser']);
+    Route::patch('/users/{id}/verify', [AdminController::class, 'reviewVerification']);
 });
