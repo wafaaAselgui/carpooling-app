@@ -9,7 +9,7 @@ function Profile() {
     const [statusMsg, setStatusMsg] = useState(null);
     const [errorMsg, setErrorMsg] = useState(null);
 
-    // Champs de mise à jour du profil
+    // Profile form inputs
     const [formData, setFormData] = useState({ name: "", phone: "", bio: "" });
     const [avatarFile, setAvatarFile] = useState(null);
     const [cinNumber, setCinNumber] = useState("");
@@ -27,7 +27,7 @@ function Profile() {
             });
             setCinNumber(data.cin_number || "");
         } catch {
-            setErrorMsg("Impossible de charger les données du profil.");
+            setErrorMsg("Failed to load profile details.");
         } finally {
             setLoading(false);
         }
@@ -43,9 +43,9 @@ function Profile() {
         setErrorMsg(null);
         try {
             await updateProfile(formData);
-            setStatusMsg("Informations personnelles mises à jour avec succès.");
+            setStatusMsg("Personal information updated successfully.");
         } catch (err) {
-            setErrorMsg(err.response?.data?.message || "Erreur lors de la mise à jour.");
+            setErrorMsg(err.response?.data?.message || "Failed to update profile.");
         }
     };
 
@@ -56,40 +56,40 @@ function Profile() {
         try {
             await uploadAvatar(avatarFile);
             setAvatarFile(null);
-            setStatusMsg("Photo de profil mise à jour.");
+            setStatusMsg("Profile avatar updated successfully.");
             loadUserData();
         } catch (err) {
-            setErrorMsg(err.response?.data?.message || "Échec de l'envoi de la photo.");
+            setErrorMsg(err.response?.data?.message || "Failed to upload avatar.");
         }
     };
 
     const handleVerificationSubmit = async (e) => {
         e.preventDefault();
         if (!cinFile) {
-            setErrorMsg("Veuillez sélectionner une image ou un PDF de votre CIN.");
+            setErrorMsg("Please upload an image or PDF of your National ID (CIN).");
             return;
         }
         setStatusMsg(null);
         setErrorMsg(null);
         try {
             await submitVerification(cinNumber, cinFile);
-            setStatusMsg("Document envoyé avec succès. En attente de validation par un administrateur.");
+            setStatusMsg("ID submitted successfully. Verification pending administrator review.");
             loadUserData();
         } catch (err) {
-            setErrorMsg(err.response?.data?.message || "Échec de la soumission du document.");
+            setErrorMsg(err.response?.data?.message || "Failed to submit verification document.");
         }
     };
 
     const renderVerificationBadge = (status) => {
         switch (status) {
             case "verified":
-                return <Badge bg="success">✓ Compte Vérifié</Badge>;
+                return <Badge bg="success">✓ Verified Identity</Badge>;
             case "pending":
-                return <Badge bg="warning" text="dark">⏳ En attente de vérification</Badge>;
+                return <Badge bg="warning" text="dark">⏳ Pending Verification</Badge>;
             case "rejected":
-                return <Badge bg="danger">✕ Document Rejeté</Badge>;
+                return <Badge bg="danger">✕ Verification Rejected</Badge>;
             default:
-                return <Badge bg="secondary">Non Vérifié</Badge>;
+                return <Badge bg="secondary">Unverified Account</Badge>;
         }
     };
 
@@ -97,20 +97,20 @@ function Profile() {
         return (
             <Container className="py-5 text-center">
                 <Spinner animation="border" variant="primary" />
-                <p className="mt-2 text-muted">Chargement de votre profil...</p>
+                <p className="mt-2 text-muted">Loading your profile...</p>
             </Container>
         );
     }
 
     return (
         <Container className="py-4">
-            <h2 className="fw-bold mb-4">Mon Profil</h2>
+            <h2 className="fw-bold mb-4">My Profile</h2>
 
-            {statusMsg && <Alert variant="success">{statusMsg}</Alert>}
-            {errorMsg && <Alert variant="danger">{errorMsg}</Alert>}
+            {statusMsg && <Alert variant="success" onClose={() => setStatusMsg(null)} dismissible>{statusMsg}</Alert>}
+            {errorMsg && <Alert variant="danger" onClose={() => setErrorMsg(null)} dismissible>{errorMsg}</Alert>}
 
             <Row className="g-4">
-                {/* Colonne Gauche : Avatar & Statut */}
+                {/* Left Column: Avatar & Verification status */}
                 <Col lg={4}>
                     <Card className="text-center shadow-sm border-0 p-3 mb-4">
                         <Card.Body>
@@ -140,22 +140,22 @@ function Profile() {
                                 disabled={!avatarFile}
                                 onClick={handleAvatarUpload}
                             >
-                                Changer la photo
+                                Change Photo
                             </Button>
                         </Card.Body>
                     </Card>
                 </Col>
 
-                {/* Colonne Droite : Formulaire Infos, CIN, et Véhicules */}
+                {/* Right Column: Personal details, ID verification & Vehicles */}
                 <Col lg={8}>
-                    {/* Informations de base */}
+                    {/* Basic Info */}
                     <Card className="shadow-sm border-0 mb-4">
                         <Card.Body>
-                            <h5 className="fw-bold mb-3">Informations Personnelles</h5>
+                            <h5 className="fw-bold mb-3">Personal Details</h5>
                             <Form onSubmit={handleInfoSubmit}>
                                 <Row className="g-3">
                                     <Col sm={6}>
-                                        <Form.Label className="small fw-semibold">Nom complet</Form.Label>
+                                        <Form.Label className="small fw-semibold">Full Name</Form.Label>
                                         <Form.Control
                                             type="text"
                                             value={formData.name}
@@ -164,7 +164,7 @@ function Profile() {
                                         />
                                     </Col>
                                     <Col sm={6}>
-                                        <Form.Label className="small fw-semibold">Téléphone</Form.Label>
+                                        <Form.Label className="small fw-semibold">Phone Number</Form.Label>
                                         <Form.Control
                                             type="text"
                                             placeholder="+212 6..."
@@ -173,50 +173,50 @@ function Profile() {
                                         />
                                     </Col>
                                     <Col xs={12}>
-                                        <Form.Label className="small fw-semibold">Mini Bio</Form.Label>
+                                        <Form.Label className="small fw-semibold">Bio</Form.Label>
                                         <Form.Control
                                             as="textarea"
                                             rows={2}
-                                            placeholder="Ex: Voyage régulièrement entre Casablanca et Rabat..."
+                                            placeholder="e.g. Regular commuter between Casablanca and Rabat, non-smoker..."
                                             value={formData.bio}
                                             onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
                                         />
                                     </Col>
                                 </Row>
                                 <Button type="submit" variant="primary" size="sm" className="mt-3">
-                                    Enregistrer les modifications
+                                    Save Changes
                                 </Button>
                             </Form>
                         </Card.Body>
                     </Card>
 
-                    {/* Section Vérification CIN */}
+                    {/* CIN Identity Verification */}
                     <Card className="shadow-sm border-0 mb-4">
                         <Card.Body>
-                            <h5 className="fw-bold mb-2">Vérification de l'Identité (CIN)</h5>
+                            <h5 className="fw-bold mb-2">Identity Verification (CIN)</h5>
                             <p className="text-muted small mb-3">
-                                Faites vérifier votre identité pour obtenir le badge de confiance sur vos trajets.
+                                Verifying your identity grants a trust badge on your trips and improves passenger booking rates.
                             </p>
 
                             {user?.verification_status === "verified" ? (
                                 <Alert variant="success" className="mb-0">
-                                    Votre numéro CIN <strong>{user?.cin_number}</strong> est validé. Votre profil est certifié.
+                                    Your National ID (CIN: <strong>{user?.cin_number}</strong>) is confirmed. Trust badge active.
                                 </Alert>
                             ) : (
                                 <Form onSubmit={handleVerificationSubmit}>
                                     <Row className="g-3">
                                         <Col sm={6}>
-                                            <Form.Label className="small fw-semibold">Numéro de CIN</Form.Label>
+                                            <Form.Label className="small fw-semibold">National ID Number (CIN)</Form.Label>
                                             <Form.Control
                                                 type="text"
-                                                placeholder="Ex: AB123456"
+                                                placeholder="e.g. AB123456"
                                                 value={cinNumber}
                                                 onChange={(e) => setCinNumber(e.target.value)}
                                                 required
                                             />
                                         </Col>
                                         <Col sm={6}>
-                                            <Form.Label className="small fw-semibold">Document (Photo Recto CIN / PDF)</Form.Label>
+                                            <Form.Label className="small fw-semibold">ID Document (Front Photo / PDF)</Form.Label>
                                             <Form.Control
                                                 type="file"
                                                 accept="image/*,.pdf"
@@ -233,15 +233,15 @@ function Profile() {
                                         disabled={user?.verification_status === "pending"}
                                     >
                                         {user?.verification_status === "pending"
-                                            ? "⏳ En cours de vérification..."
-                                            : "Soumettre pour validation"}
+                                            ? "⏳ Verification Pending..."
+                                            : "Submit for Verification"}
                                     </Button>
                                 </Form>
                             )}
                         </Card.Body>
                     </Card>
 
-                    {/* Gestionnaire de véhicules */}
+                    {/* Vehicles & Document Management */}
                     <VehicleManager />
                 </Col>
             </Row>

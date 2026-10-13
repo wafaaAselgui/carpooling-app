@@ -16,12 +16,20 @@ class Vehicle extends Model
         'license_plate',
         'seats',
         'photo',
+        'registration_doc_path',
+        'insurance_doc_path',
+        'insurance_expires_at',
+        'status',
     ];
 
     /**
      * Attributs virtuels ajoutés automatiquement lors de la sérialisation JSON
      */
-    protected $appends = ['photo_url'];
+    protected $appends = [
+        'photo_url',
+        'registration_doc_url',
+        'insurance_doc_url',
+    ];
 
     /**
      * Accesseur pour récupérer l'URL publique de la photo
@@ -33,6 +41,20 @@ class Vehicle extends Model
             : null;
     }
 
+    public function getRegistrationDocUrlAttribute(): ?string
+    {
+        return $this->registration_doc_path 
+            ? asset('storage/' . $this->registration_doc_path) 
+            : null;
+    }
+
+    public function getInsuranceDocUrlAttribute(): ?string
+    {
+        return $this->insurance_doc_path 
+            ? asset('storage/' . $this->insurance_doc_path) 
+            : null;
+    }
+    
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);

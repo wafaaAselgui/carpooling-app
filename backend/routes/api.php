@@ -49,6 +49,7 @@ Route::middleware(['auth:sanctum', 'check.banned'])->group(function () {
     Route::get('/vehicles', [VehicleController::class, 'index']);
     Route::post('/vehicles', [VehicleController::class, 'store']);
     Route::delete('/vehicles/{id}', [VehicleController::class, 'destroy']);
+    Route::post('/vehicles/{id}/documents', [VehicleController::class, 'uploadDocuments']);
 
     // Trips
     Route::post('/trips', [TripController::class, 'store']);
@@ -78,4 +79,6 @@ Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->group(function ()
     Route::patch('/trips/{id}/cancel', [AdminController::class, 'cancelTrip']);
     Route::patch('/users/{id}/toggle-ban', [AdminController::class, 'toggleBanUser']);
     Route::patch('/users/{id}/verify', [AdminController::class, 'reviewVerification']);
+    Route::patch('/vehicles/{id}/verify', [AdminController::class, 'reviewVehicle']);
+
 });

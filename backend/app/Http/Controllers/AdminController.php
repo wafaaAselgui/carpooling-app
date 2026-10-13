@@ -120,4 +120,17 @@ class AdminController extends Controller
             'user'    => $user,
         ]);
     }
+
+    public function reviewVehicle(Request $request, $id)
+    {
+        $request->validate(['status' => 'required|in:verified,rejected']);
+        $vehicle = Vehicle::findOrFail($id);
+        $vehicle->status = $request->status;
+        $vehicle->save();
+
+        return response()->json([
+            'message' => "Vehicle status updated to {$request->status}.",
+            'vehicle' => $vehicle,
+        ]);
+    }
 }
