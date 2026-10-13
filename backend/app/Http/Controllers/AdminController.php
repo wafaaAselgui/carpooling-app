@@ -6,12 +6,13 @@ use App\Models\Booking;
 use App\Models\Review;
 use App\Models\Trip;
 use App\Models\User;
+use App\Models\Vehicle;
 use Illuminate\Http\Request;
 
 class AdminController extends Controller
 {
     /**
-     * Statistiques globales de la plateforme
+     * Platform-wide analytics and key performance metrics
      */
     public function stats()
     {
@@ -22,7 +23,7 @@ class AdminController extends Controller
         $totalReviews = Review::count();
         $avgRating = Review::avg('rating');
 
-        // Volume financier brut estimé (réservations confirmées)
+        // Gross volume generated from confirmed bookings (seats * price_per_seat)
         $grossVolume = Booking::where('bookings.status', 'confirmed')
             ->join('trips', 'bookings.trip_id', '=', 'trips.id')
             ->selectRaw('SUM(bookings.seats * trips.price_per_seat) as total')
@@ -36,11 +37,70 @@ class AdminController extends Controller
             'total_reviews'           => $totalReviews,
             'average_platform_rating' => round($avgRating ?? 0, 1),
             'gross_volume_mad'        => round($grossVolume, 2),
+            'pending_users'           => User::where('verification_status', 'pending')->count(),
+            'pending_vehicles'        => Vehicle::where('status', 'pending')->count(),
         ]);
     }
 
     /**
-     * Liste des utilisateurs avec métriques
+     * Queues for pending user IDs (CIN) and vehicle documentation
+     */
+    public function pendingVerifications()
+    {
+        $users = User::where('verification_status', 'pending')
+            ->select('id', 'name', 'email', 'phone', 'cin_number', 'cin_document_path', 'verification_status', 'created_at')
+            ->get();
+
+        $vehicles = Vehicle::with('user:id,name,email')
+            ->where('status', 'pending')
+            ->get();
+
+        return response()->json([
+            'users'    => $users,
+            'vehicles' => $vehicles,
+        ]);
+    }
+
+    /**
+     * Moderate user identity verification (CIN)
+     */
+    public function reviewVerification(Request $request, $id)
+    {
+        $validated = $request->validate([
+            'status' => 'required|in:verified,rejected',
+        ]);
+
+        $user = User::findOrFail($id);
+        $user->verification_status = $validated['status'];
+        $user->save();
+
+        return response()->json([
+            'message' => "User identity status updated to {$validated['status']}.",
+            'user'    => $user,
+        ]);
+    }
+
+    /**
+     * Moderate vehicle registration & insurance documentation
+     */
+    public function reviewVehicle(Request $request, $id)
+    {
+        $validated = $request->validate([
+            'status' => 'required|in:verified,rejected',
+        ]);
+
+        $vehicle = Vehicle::findOrFail($id);
+        $vehicle->status = $validated['status'];
+        $vehicle->save();
+
+        return response()->json([
+            'message' => "Vehicle status updated to {$validated['status']}.",
+            'vehicle' => $vehicle,
+        ]);
+    }
+
+    /**
+     * Paginated user list with associated vehicle & review counts
      */
     public function users()
     {
@@ -52,7 +112,7 @@ class AdminController extends Controller
     }
 
     /**
-     * Liste de tous les trajets pour modération
+     * Paginated trip list for ride moderation
      */
     public function trips()
     {
@@ -65,7 +125,7 @@ class AdminController extends Controller
     }
 
     /**
-     * Forcer l'annulation d'un trajet par l'admin
+     * Force-cancel a trip and invalidate related active reservations
      */
     public function cancelTrip($id)
     {
@@ -73,64 +133,48 @@ class AdminController extends Controller
 
         if ($trip->status === 'cancelled') {
             return response()->json([
-                'message' => 'Ce trajet est déjà annulé.'
+                'message' => 'This trip is already cancelled.'
             ], 422);
         }
 
         $trip->status = 'cancelled';
         $trip->save();
 
-        // Annulation des réservations actives liées
         $trip->bookings()->where('status', '!=', 'cancelled')->update([
             'status' => 'cancelled',
         ]);
 
         return response()->json([
-            'message' => "Trajet #{$trip->id} annulé par l'administrateur.",
+            'message' => "Trip #{$trip->id} was cancelled by the administrator.",
             'trip'    => $trip,
         ]);
     }
 
     /**
-     * Suspendre ou réactiver un utilisateur
+     * Ban or unban a user account and immediately invalidate auth tokens
      */
     public function toggleBanUser(Request $request, $id)
     {
         $user = User::findOrFail($id);
 
-        // Sécurité : l'administrateur ne peut pas se bannir lui-même
         if ($user->id === $request->user()->id) {
             return response()->json([
-                'message' => 'Vous ne pouvez pas suspendre votre propre compte.'
+                'message' => 'You cannot suspend your own account.'
             ], 422);
         }
 
         $user->is_banned = !$user->is_banned;
         $user->save();
 
-        // Révocation immédiate des jetons d'accès si le compte est suspendu
         if ($user->is_banned) {
             $user->tokens()->delete();
         }
 
-        $statusMessage = $user->is_banned ? 'suspendu' : 'réactivé';
+        $statusMessage = $user->is_banned ? 'suspended' : 'reactivated';
 
         return response()->json([
-            'message' => "L'utilisateur {$user->name} a été {$statusMessage}.",
+            'message' => "User {$user->name} has been {$statusMessage}.",
             'user'    => $user,
-        ]);
-    }
-
-    public function reviewVehicle(Request $request, $id)
-    {
-        $request->validate(['status' => 'required|in:verified,rejected']);
-        $vehicle = Vehicle::findOrFail($id);
-        $vehicle->status = $request->status;
-        $vehicle->save();
-
-        return response()->json([
-            'message' => "Vehicle status updated to {$request->status}.",
-            'vehicle' => $vehicle,
         ]);
     }
 }

@@ -1,244 +1,368 @@
 import { useEffect, useState } from "react";
-import { Container, Row, Col, Card, Table, Badge, Button, Tabs, Tab, Spinner, Alert } from "react-bootstrap";
-import { getAdminStats, getAdminUsers, getAdminTrips, adminCancelTrip, toggleBanUser } from "../services/admin";
+import { Container, Row, Col, Card, Table, Button, Badge, Alert, Spinner, Tabs, Tab } from "react-bootstrap";
+import {
+    getAdminStats,
+    getPendingVerifications,
+    reviewUserVerification,
+    reviewVehicleVerification,
+    getAdminUsers,
+    toggleBanUser,
+} from "../services/admin";
 
-function AdminDashboard() {
+export default function AdminDashboard() {
     const [stats, setStats] = useState(null);
-    const [users, setUsers] = useState([]);
-    const [trips, setTrips] = useState([]);
+    const [pendingUsers, setPendingUsers] = useState([]);
+    const [pendingVehicles, setPendingVehicles] = useState([]);
+    const [allUsers, setAllUsers] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [feedback, setFeedback] = useState(null);
     const [error, setError] = useState(null);
 
-    const loadAllData = async () => {
+    const loadDashboardData = async () => {
         try {
             setLoading(true);
-            const [statsData, usersData, tripsData] = await Promise.all([
+            const [statsData, verifData, usersData] = await Promise.all([
                 getAdminStats(),
+                getPendingVerifications(),
                 getAdminUsers(),
-                getAdminTrips(),
             ]);
             setStats(statsData);
-            setUsers(usersData.data || usersData);
-            setTrips(tripsData.data || tripsData);
-        } catch (err) {
-            console.error("Erreur admin:", err);
-            setError("Impossible de charger les données du tableau de bord.");
+            setPendingUsers(verifData.users || []);
+            setPendingVehicles(verifData.vehicles || []);
+            
+            // Handle both paginated (usersData.data) and non-paginated (usersData) responses
+            const usersList = Array.isArray(usersData) ? usersData : (usersData?.data || []);
+            setAllUsers(usersList);
+        } catch {
+            setError("Unable to load administration records.");
         } finally {
             setLoading(false);
         }
     };
-
     useEffect(() => {
-        loadAllData();
+        loadDashboardData();
     }, []);
 
-    const handleCancelTrip = async (tripId) => {
-        if (!window.confirm(`Confirmer l'annulation forcée du trajet #${tripId} ?`)) return;
-
+    const handleReviewUser = async (userId, status) => {
+        setError(null);
+        setFeedback(null);
         try {
-            await adminCancelTrip(tripId);
-            loadAllData();
+            await reviewUserVerification(userId, status);
+            setFeedback(`User identity marked as ${status}.`);
+            loadDashboardData();
         } catch (err) {
-            alert(err.response?.data?.message || "Échec de l'annulation.");
+            setError(err.response?.data?.message || "Failed to update identity status.");
         }
     };
 
-    const handleToggleBan = async (user) => {
-        const actionLabel = user.is_banned ? "réactiver" : "suspendre";
-        if (!window.confirm(`Confirmer la demande : ${actionLabel} le compte de ${user.name} ?`)) return;
-
+    const handleReviewVehicle = async (vehicleId, status) => {
+        setError(null);
+        setFeedback(null);
         try {
-            await toggleBanUser(user.id);
-            loadAllData();
+            await reviewVehicleVerification(vehicleId, status);
+            setFeedback(`Vehicle documents marked as ${status}.`);
+            loadDashboardData();
         } catch (err) {
-            alert(err.response?.data?.message || `Échec lors de l'opération pour ${actionLabel} l'utilisateur.`);
+            setError(err.response?.data?.message || "Failed to update vehicle status.");
         }
     };
 
-    const getStatusBadge = (status) => {
-        switch (status) {
-            case "scheduled":
-                return <Badge bg="primary">Scheduled</Badge>;
-            case "in_progress":
-                return <Badge bg="warning" text="dark">In Progress</Badge>;
-            case "completed":
-                return <Badge bg="success">Completed</Badge>;
-            case "cancelled":
-                return <Badge bg="danger">Cancelled</Badge>;
-            default:
-                return <Badge bg="secondary">{status}</Badge>;
+    const handleToggleBan = async (userId) => {
+        setError(null);
+        setFeedback(null);
+        try {
+            const res = await toggleBanUser(userId);
+            setFeedback(res.message);
+            loadDashboardData();
+        } catch (err) {
+            setError(err.response?.data?.message || "Failed to update user ban status.");
         }
+    };
+
+    const getStorageUrl = (path) => {
+        if (!path) return null;
+        if (path.startsWith("http")) return path;
+        const backendBase = import.meta.env.VITE_API_URL
+            ? import.meta.env.VITE_API_URL.replace("/api", "")
+            : "http://localhost:8000";
+        return `${backendBase}/storage/${path}`;
     };
 
     if (loading) {
         return (
             <Container className="py-5 text-center">
-                <Spinner animation="border" variant="dark" />
-                <p className="mt-2 text-muted">Chargement du tableau d'administration...</p>
+                <Spinner animation="border" variant="warning" />
+                <p className="mt-2 text-muted">Loading Administrator Control Center...</p>
             </Container>
         );
     }
 
     return (
-        <Container className="py-4">
-            <h1 className="mb-4">Admin Dashboard</h1>
+        <Container fluid className="py-4 px-lg-5">
+            <h2 className="fw-bold mb-4">Admin Dashboard</h2>
 
-            {error && <Alert variant="danger">{error}</Alert>}
+            {feedback && <Alert variant="success" onClose={() => setFeedback(null)} dismissible>{feedback}</Alert>}
+            {error && <Alert variant="danger" onClose={() => setError(null)} dismissible>{error}</Alert>}
 
-            {/* KPI Metrics */}
-            {stats && (
-                <Row className="g-3 mb-4">
-                    <Col xs={6} md={3}>
-                        <Card className="text-center shadow-sm border-0 bg-light">
-                            <Card.Body>
-                                <div className="text-muted small">Total Utilisateurs</div>
-                                <h3 className="fw-bold mb-0">{stats.total_users}</h3>
-                            </Card.Body>
-                        </Card>
-                    </Col>
-                    <Col xs={6} md={3}>
-                        <Card className="text-center shadow-sm border-0 bg-light">
-                            <Card.Body>
-                                <div className="text-muted small">Total Trajets</div>
-                                <h3 className="fw-bold mb-0">{stats.total_trips}</h3>
-                                <small className="text-success">{stats.completed_trips} terminés</small>
-                            </Card.Body>
-                        </Card>
-                    </Col>
-                    <Col xs={6} md={3}>
-                        <Card className="text-center shadow-sm border-0 bg-light">
-                            <Card.Body>
-                                <div className="text-muted small">Réservations</div>
-                                <h3 className="fw-bold mb-0">{stats.total_bookings}</h3>
-                            </Card.Body>
-                        </Card>
-                    </Col>
-                    <Col xs={6} md={3}>
-                        <Card className="text-center shadow-sm border-0 bg-light">
-                            <Card.Body>
-                                <div className="text-muted small">Volume d'affaires</div>
-                                <h3 className="fw-bold mb-0 text-primary">{stats.gross_volume_mad} MAD</h3>
-                                <small className="text-warning">★ {stats.average_platform_rating}/5 ({stats.total_reviews} avis)</small>
-                            </Card.Body>
-                        </Card>
-                    </Col>
-                </Row>
-            )}
-
-            {/* Management Tabs */}
-            <Tabs defaultActiveKey="trips" className="mb-3">
-                <Tab eventKey="trips" title={`Modération des Trajets (${trips.length})`}>
-                    <Card className="shadow-sm border-0">
-                        <Card.Body className="p-0">
-                            <Table responsive hover className="align-middle mb-0">
-                                <thead className="table-dark">
-                                    <tr>
-                                        <th>#</th>
-                                        <th>Trajet</th>
-                                        <th>Conducteur</th>
-                                        <th>Départ</th>
-                                        <th>Places</th>
-                                        <th>Statut</th>
-                                        <th>Action</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {trips.map((t) => (
-                                        <tr key={t.id}>
-                                            <td>{t.id}</td>
-                                            <td>
-                                                <strong>{t.departure_city} → {t.destination_city}</strong>
-                                                <div className="text-muted small">{t.price_per_seat} MAD / place</div>
-                                            </td>
-                                            <td>
-                                                {t.driver?.name}
-                                                <div className="text-muted small">{t.driver?.email}</div>
-                                            </td>
-                                            <td>{new Date(t.departure_time).toLocaleDateString()}</td>
-                                            <td>{t.available_seats} / {t.total_seats} ({t.bookings_count} rés.)</td>
-                                            <td>{getStatusBadge(t.status)}</td>
-                                            <td>
-                                                {t.status !== "cancelled" && t.status !== "completed" ? (
-                                                    <Button
-                                                        variant="outline-danger"
-                                                        size="sm"
-                                                        onClick={() => handleCancelTrip(t.id)}
-                                                    >
-                                                        Annuler
-                                                    </Button>
-                                                ) : (
-                                                    <span className="text-muted small">—</span>
-                                                )}
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </Table>
+            {/* Quick Metrics */}
+            <Row className="g-3 mb-4">
+                <Col sm={6} md={3}>
+                    <Card className="border-0 shadow-sm bg-primary text-white">
+                        <Card.Body>
+                            <h6 className="small text-uppercase">Total Registered Users</h6>
+                            <h3 className="fw-bold mb-0">{stats?.total_users || 0}</h3>
                         </Card.Body>
                     </Card>
-                </Tab>
+                </Col>
+                <Col sm={6} md={3}>
+                    <Card className="border-0 shadow-sm bg-success text-white">
+                        <Card.Body>
+                            <h6 className="small text-uppercase">Total Trips Published</h6>
+                            <h3 className="fw-bold mb-0">{stats?.total_trips || 0}</h3>
+                        </Card.Body>
+                    </Card>
+                </Col>
+                <Col sm={6} md={3}>
+                    <Card className="border-0 shadow-sm bg-warning text-dark">
+                        <Card.Body>
+                            <h6 className="small text-uppercase">Pending Identity (CIN)</h6>
+                            <h3 className="fw-bold mb-0">{stats?.pending_users || 0}</h3>
+                        </Card.Body>
+                    </Card>
+                </Col>
+                <Col sm={6} md={3}>
+                    <Card className="border-0 shadow-sm bg-info text-white">
+                        <Card.Body>
+                            <h6 className="small text-uppercase">Pending Vehicle Papers</h6>
+                            <h3 className="fw-bold mb-0">{stats?.pending_vehicles || 0}</h3>
+                        </Card.Body>
+                    </Card>
+                </Col>
+            </Row>
 
-                <Tab eventKey="users" title={`Utilisateurs (${users.length})`}>
-                    <Card className="shadow-sm border-0">
-                        <Card.Body className="p-0">
-                            <Table responsive hover className="align-middle mb-0">
-                                <thead className="table-dark">
+            {/* Verification & Moderation Tabs */}
+            <Card className="border-0 shadow-sm">
+                <Card.Body>
+                    <Tabs defaultActiveKey="identity" className="mb-3">
+                        {/* Tab 1: Pending Identity Verifications */}
+                        <Tab
+                            eventKey="identity"
+                            title={`Identity Verifications (${pendingUsers.length})`}
+                        >
+                            {pendingUsers.length === 0 ? (
+                                <Alert variant="light" className="text-center py-4 text-muted">
+                                    No pending user identity verification requests.
+                                </Alert>
+                            ) : (
+                                <Table responsive hover align="middle" className="mb-0">
+                                    <thead className="table-light">
+                                        <tr>
+                                            <th>User</th>
+                                            <th>Email / Phone</th>
+                                            <th>CIN Number</th>
+                                            <th>Document</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {pendingUsers.map((u) => (
+                                            <tr key={u.id}>
+                                                <td className="fw-bold">{u.name}</td>
+                                                <td>
+                                                    <div className="small">{u.email}</div>
+                                                    <div className="text-muted small">{u.phone || "No phone"}</div>
+                                                </td>
+                                                <td>
+                                                    <Badge bg="dark">{u.cin_number}</Badge>
+                                                </td>
+                                                <td>
+                                                    {u.cin_document_path ? (
+                                                        <a
+                                                            href={getStorageUrl(u.cin_document_path)}
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            className="btn btn-sm btn-outline-primary"
+                                                        >
+                                                            View Document ↗
+                                                        </a>
+                                                    ) : (
+                                                        <span className="text-muted small">None</span>
+                                                    )}
+                                                </td>
+                                                <td>
+                                                    <div className="d-flex gap-2">
+                                                        <Button
+                                                            size="sm"
+                                                            variant="success"
+                                                            onClick={() => handleReviewUser(u.id, "verified")}
+                                                        >
+                                                            Approve
+                                                        </Button>
+                                                        <Button
+                                                            size="sm"
+                                                            variant="danger"
+                                                            onClick={() => handleReviewUser(u.id, "rejected")}
+                                                        >
+                                                            Reject
+                                                        </Button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </Table>
+                            )}
+                        </Tab>
+
+                        {/* Tab 2: Pending Vehicle Papers */}
+                        <Tab
+                            eventKey="vehicles"
+                            title={`Vehicle Papers (${pendingVehicles.length})`}
+                        >
+                            {pendingVehicles.length === 0 ? (
+                                <Alert variant="light" className="text-center py-4 text-muted">
+                                    No pending vehicle verification requests.
+                                </Alert>
+                            ) : (
+                                <Table responsive hover align="middle" className="mb-0">
+                                    <thead className="table-light">
+                                        <tr>
+                                            <th>Driver</th>
+                                            <th>Vehicle</th>
+                                            <th>Registration (Carte Grise)</th>
+                                            <th>Insurance Certificate</th>
+                                            <th>Insurance Expiry</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {pendingVehicles.map((v) => (
+                                            <tr key={v.id}>
+                                                <td>
+                                                    <div className="fw-semibold">{v.user?.name}</div>
+                                                    <div className="text-muted small">{v.user?.email}</div>
+                                                </td>
+                                                <td>
+                                                    <div className="fw-bold">{v.brand} {v.model}</div>
+                                                    <div className="small text-muted">{v.license_plate} • {v.color}</div>
+                                                </td>
+                                                <td>
+                                                    {v.registration_doc_path ? (
+                                                        <a
+                                                            href={getStorageUrl(v.registration_doc_path)}
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            className="btn btn-sm btn-outline-primary"
+                                                        >
+                                                            View Carte Grise ↗
+                                                        </a>
+                                                    ) : (
+                                                        <span className="text-muted small">Missing</span>
+                                                    )}
+                                                </td>
+                                                <td>
+                                                    {v.insurance_doc_path ? (
+                                                        <a
+                                                            href={getStorageUrl(v.insurance_doc_path)}
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            className="btn btn-sm btn-outline-primary"
+                                                        >
+                                                            View Insurance ↗
+                                                        </a>
+                                                    ) : (
+                                                        <span className="text-muted small">Missing</span>
+                                                    )}
+                                                </td>
+                                                <td>
+                                                    <Badge bg="secondary">
+                                                        {v.insurance_expires_at || "Not specified"}
+                                                    </Badge>
+                                                </td>
+                                                <td>
+                                                    <div className="d-flex gap-2">
+                                                        <Button
+                                                            size="sm"
+                                                            variant="success"
+                                                            onClick={() => handleReviewVehicle(v.id, "verified")}
+                                                        >
+                                                            Approve
+                                                        </Button>
+                                                        <Button
+                                                            size="sm"
+                                                            variant="danger"
+                                                            onClick={() => handleReviewVehicle(v.id, "rejected")}
+                                                        >
+                                                            Reject
+                                                        </Button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </Table>
+                            )}
+                        </Tab>
+
+                        {/* Tab 3: User Accounts & Moderation */}
+                        <Tab eventKey="users" title={`All Users (${allUsers?.length || 0})`}>
+                            <Table responsive hover align="middle" className="mb-0">
+                                <thead className="table-light">
                                     <tr>
-                                        <th>ID</th>
-                                        <th>Nom</th>
+                                        <th>Name</th>
                                         <th>Email</th>
-                                        <th>Rôle</th>
-                                        <th>Statut</th>
-                                        <th>Véhicules</th>
-                                        <th>Inscrit le</th>
-                                        <th>Action</th>
+                                        <th>Identity Status</th>
+                                        <th>Vehicles</th>
+                                        <th>Account Status</th>
+                                        <th>Moderation</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {users.map((u) => (
-                                        <tr key={u.id} className={u.is_banned ? "table-danger" : ""}>
-                                            <td>{u.id}</td>
-                                            <td><strong>{u.name}</strong></td>
+                                    {(Array.isArray(allUsers) ? allUsers : []).map((u) => (
+                                        <tr key={u.id}>
+                                            <td className="fw-bold">{u.name}</td>
                                             <td>{u.email}</td>
                                             <td>
-                                                {u.is_admin ? (
-                                                    <Badge bg="danger">Admin</Badge>
-                                                ) : (
-                                                    <Badge bg="secondary">Membre</Badge>
-                                                )}
+                                                <Badge
+                                                    bg={
+                                                        u.verification_status === "verified"
+                                                            ? "success"
+                                                            : u.verification_status === "pending"
+                                                            ? "warning"
+                                                            : "secondary"
+                                                    }
+                                                    text={u.verification_status === "pending" ? "dark" : "white"}
+                                                >
+                                                    {u.verification_status}
+                                                </Badge>
                                             </td>
+                                            <td>{u.vehicles_count ?? u.vehicles?.length ?? 0}</td>
                                             <td>
                                                 {u.is_banned ? (
-                                                    <Badge bg="danger">Suspendu</Badge>
+                                                    <Badge bg="danger">Banned</Badge>
                                                 ) : (
-                                                    <Badge bg="success">Actif</Badge>
+                                                    <Badge bg="success">Active</Badge>
                                                 )}
                                             </td>
-                                            <td>{u.vehicles_count ?? 0}</td>
-                                            <td>{new Date(u.created_at).toLocaleDateString()}</td>
                                             <td>
-                                                {!u.is_admin ? (
+                                                {!u.is_admin && (
                                                     <Button
-                                                        variant={u.is_banned ? "outline-success" : "outline-danger"}
                                                         size="sm"
-                                                        onClick={() => handleToggleBan(u)}
+                                                        variant={u.is_banned ? "outline-success" : "outline-danger"}
+                                                        onClick={() => handleToggleBan(u.id)}
                                                     >
-                                                        {u.is_banned ? "Réactiver" : "Bannir"}
+                                                        {u.is_banned ? "Unban User" : "Ban User"}
                                                     </Button>
-                                                ) : (
-                                                    <span className="text-muted small">—</span>
                                                 )}
                                             </td>
                                         </tr>
                                     ))}
                                 </tbody>
                             </Table>
-                        </Card.Body>
-                    </Card>
-                </Tab>
-            </Tabs>
+                        </Tab>
+                    </Tabs>
+                </Card.Body>
+            </Card>
         </Container>
     );
 }
-
-export default AdminDashboard;

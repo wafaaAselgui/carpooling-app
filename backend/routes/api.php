@@ -78,7 +78,9 @@ Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->group(function ()
     Route::get('/trips', [AdminController::class, 'trips']);
     Route::patch('/trips/{id}/cancel', [AdminController::class, 'cancelTrip']);
     Route::patch('/users/{id}/toggle-ban', [AdminController::class, 'toggleBanUser']);
+
+    // Moderation & Verifications
+    Route::get('/verifications/pending', [AdminController::class, 'pendingVerifications']);
     Route::patch('/users/{id}/verify', [AdminController::class, 'reviewVerification']);
     Route::patch('/vehicles/{id}/verify', [AdminController::class, 'reviewVehicle']);
-
 });
