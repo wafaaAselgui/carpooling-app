@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { Card, Button, Container, Row, Col, Badge, Alert, Spinner } from "react-bootstrap";
+import { Card, Button, Container, Row, Col, Badge, Alert, Spinner, Image } from "react-bootstrap";
 import { getTripById } from "../services/trip";
 import { createBooking } from "../services/booking";
 import { useAuth } from "../context/AuthContext";
@@ -58,6 +58,21 @@ function TripDetails() {
     const isTripOpen = trip.status === "scheduled";
     const isSoldOut = trip.available_seats <= 0;
 
+    const isDriverVerified = trip.driver?.verification_status === "verified";
+    const isCarVerified = trip.vehicle?.status === "verified";
+
+    const backendBase = import.meta.env.VITE_API_URL
+        ? import.meta.env.VITE_API_URL.replace("/api", "")
+        : "http://localhost:8000";
+
+    const driverAvatar = trip.driver?.avatar_url || (trip.driver?.avatar_path 
+        ? `${backendBase}/storage/${trip.driver.avatar_path}` 
+        : "https://placehold.co/120x120?text=Driver");
+
+    const vehiclePhoto = trip.vehicle?.photo_url || (trip.vehicle?.photo 
+        ? `${backendBase}/storage/${trip.vehicle.photo}` 
+        : null);
+
     const handleBooking = async () => {
         if (!user) {
             navigate("/login");
@@ -105,113 +120,159 @@ function TripDetails() {
     };
 
     return (
-        <Container className="py-4">
-            <Button as={Link} to="/" variant="outline-secondary" className="mb-4">
+        <Container className="py-4" style={{ maxWidth: "860px" }}>
+            <Button as={Link} to="/" variant="outline-secondary" size="sm" className="mb-3">
                 ← Back to trips
             </Button>
 
-            <Card className="shadow-sm">
+            <Card className="shadow-sm border-0">
                 <Card.Body className="p-4">
-                    <div className="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
-                        <Card.Title className="h3 mb-0">
-                            {trip.departure_city} → {trip.destination_city}
-                        </Card.Title>
-                        <div>{getStatusBadge(trip.status)}</div>
+                    <div className="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2 border-bottom pb-3">
+                        <div>
+                            <h3 className="fw-bold mb-1 text-capitalize">
+                                {trip.departure_city} → {trip.destination_city}
+                            </h3>
+                            <div className="text-muted small">
+                                📅 {new Date(trip.departure_time).toLocaleString("en-US", {
+                                    dateStyle: "full",
+                                    timeStyle: "short",
+                                })}
+                            </div>
+                        </div>
+                        <div className="text-end">
+                            <div className="fs-3 fw-bold text-success mb-1">
+                                {trip.price_per_seat} MAD
+                            </div>
+                            <div>{getStatusBadge(trip.status)}</div>
+                        </div>
                     </div>
 
                     <Row className="g-4">
+                        {/* Trip & Route Specs */}
                         <Col md={6}>
-                            <h5 className="border-bottom pb-2">Trip Information</h5>
-                            <p className="mb-2">
-                                <strong>Departure Date & Time:</strong>{" "}
-                                {new Date(trip.departure_time).toLocaleString()}
-                            </p>
-                            <p className="mb-2">
-                                <strong>Pickup Point:</strong> {trip.departure_address}
-                            </p>
-                            <p className="mb-2">
-                                <strong>Drop-off Point:</strong> {trip.destination_address}
-                            </p>
-                            <p className="mb-2">
-                                <strong>Available Seats:</strong>{" "}
+                            <h5 className="fw-bold mb-3">Ride Route</h5>
+                            {trip.departure_address && (
+                                <p className="mb-2 small">
+                                    <strong className="text-dark">Pickup Location:</strong> {trip.departure_address}
+                                </p>
+                            )}
+                            {trip.destination_address && (
+                                <p className="mb-2 small">
+                                    <strong className="text-dark">Drop-off Location:</strong> {trip.destination_address}
+                                </p>
+                            )}
+                            <p className="mb-2 small">
+                                <strong className="text-dark">Remaining Capacity:</strong>{" "}
                                 {trip.available_seats > 0 ? (
                                     <span className="text-success fw-bold">
-                                        {trip.available_seats} of {trip.total_seats} remaining
+                                        {trip.available_seats} seat{trip.available_seats > 1 ? "s" : ""} left
                                     </span>
                                 ) : (
                                     <span className="text-danger fw-bold">Sold Out</span>
                                 )}
                             </p>
-                            <p className="mb-2">
-                                <strong>Price per Seat:</strong>{" "}
-                                <span className="fs-5 fw-bold text-primary">
-                                    {trip.price_per_seat} MAD
-                                </span>
-                            </p>
+
+                            {trip.description && (
+                                <div className="mt-3 p-3 bg-light rounded">
+                                    <div className="fw-semibold small text-dark mb-1">Driver's Notes:</div>
+                                    <div className="small text-muted">{trip.description}</div>
+                                </div>
+                            )}
                         </Col>
 
+                        {/* Driver Profile & Vehicle Cards */}
                         <Col md={6}>
-                            <h5 className="border-bottom pb-2">Driver & Vehicle</h5>
-                            <p className="mb-2">
-                                <strong>Driver:</strong> {trip.driver?.name}
-                            </p>
-                            <p className="mb-2 d-flex align-items-center gap-2">
-                                <strong>Driver:</strong> {trip.driver?.name}
-                                {trip.driver?.average_rating ? (
-                                    <Badge bg="warning" text="dark">
-                                        ★ {Number(trip.driver.average_rating).toFixed(1)} ({trip.driver.reviews_count || 0})
-                                    </Badge>
-                                ) : (
-                                    <Badge bg="light" text="secondary" className="border">
-                                        New Driver
-                                    </Badge>
-                                )}
-                            </p>                            
-                            <p className="mb-2">
-                                <strong>Vehicle:</strong> {trip.vehicle?.brand} {trip.vehicle?.model}
-                            </p>
-                            <p className="mb-2">
-                                <strong>Color:</strong> {trip.vehicle?.color || "Not specified"}
-                            </p>
-                            <p className="mb-2">
-                                <strong>License Plate:</strong>{" "}
-                                <Badge bg="light" text="dark" className="border">
-                                    {trip.vehicle?.license_plate || "N/A"}
-                                </Badge>
-                            </p>
+                            <h5 className="fw-bold mb-3">Driver & Trust</h5>
+
+                            <div className="d-flex align-items-center gap-3 p-3 border rounded mb-3 bg-light">
+                                <Image
+                                    src={driverAvatar}
+                                    roundedCircle
+                                    width={56}
+                                    height={56}
+                                    className="object-fit-cover border shadow-sm"
+                                />
+                                <div>
+                                    <h6 className="fw-bold mb-1">{trip.driver?.name}</h6>
+                                    <div className="d-flex flex-wrap gap-1 mb-1">
+                                        {isDriverVerified ? (
+                                            <Badge bg="success" className="py-1">
+                                                ✓ Verified ID
+                                            </Badge>
+                                        ) : (
+                                            <Badge bg="secondary">Unverified ID</Badge>
+                                        )}
+
+                                        {trip.driver?.average_rating ? (
+                                            <Badge bg="warning" text="dark" className="py-1">
+                                                ★ {Number(trip.driver.average_rating).toFixed(1)} ({trip.driver.reviews_count || 0})
+                                            </Badge>
+                                        ) : (
+                                            <Badge bg="light" text="dark" className="border py-1">
+                                                New Driver
+                                            </Badge>
+                                        )}
+                                    </div>
+                                    {trip.driver?.bio && (
+                                        <div className="small text-muted italic">"{trip.driver.bio}"</div>
+                                    )}
+                                </div>
+                            </div>
+
+                            {trip.vehicle && (
+                                <div className="p-3 border rounded">
+                                    <div className="d-flex justify-content-between align-items-start mb-2">
+                                        <div>
+                                            <div className="fw-bold">
+                                                {trip.vehicle.brand} {trip.vehicle.model}
+                                            </div>
+                                            <div className="small text-muted">
+                                                Color: {trip.vehicle.color || "N/A"} • Plate: {trip.vehicle.license_plate}
+                                            </div>
+                                        </div>
+                                        {isCarVerified && (
+                                            <Badge bg="primary">✓ Car Verified</Badge>
+                                        )}
+                                    </div>
+
+                                    {vehiclePhoto && (
+                                        <Image
+                                            src={vehiclePhoto}
+                                            rounded
+                                            className="w-100 object-fit-cover mt-2"
+                                            style={{ maxHeight: "150px" }}
+                                            alt="Vehicle"
+                                        />
+                                    )}
+                                </div>
+                            )}
                         </Col>
                     </Row>
 
-                    <hr className="my-4" />
-
-                    <h5>Trip Notes</h5>
-                    <p className="text-muted">
-                        {trip.description || "No specific instructions provided by driver."}
-                    </p>
-
                     {bookingFeedback.message && (
-                        <Alert variant={bookingFeedback.type} className="mt-3">
+                        <Alert variant={bookingFeedback.type} className="mt-4" dismissible>
                             {bookingFeedback.message}
                         </Alert>
                     )}
 
-                    <div className="mt-4 pt-2 border-top">
+                    {/* Booking Action Bar */}
+                    <div className="mt-4 pt-3 border-top">
                         {isDriver ? (
                             <Alert variant="secondary" className="mb-0">
-                                <strong>Driver view:</strong> You are the driver of this trip. You cannot book seats on your own ride.
+                                <strong>Driver View:</strong> You published this ride. You cannot book seats on your own trip.
                             </Alert>
                         ) : !isTripOpen ? (
                             <Alert variant="warning" className="mb-0">
-                                This trip is currently <strong>{trip.status}</strong> and is no longer accepting new bookings.
+                                This trip is <strong>{trip.status}</strong> and is not accepting bookings.
                             </Alert>
                         ) : isSoldOut && !booked ? (
                             <Alert variant="danger" className="mb-0">
-                                This trip is fully booked.
+                                This trip is completely full.
                             </Alert>
                         ) : (
                             <Row className="align-items-end g-3">
                                 <Col xs={12} sm={4} md={3}>
-                                    <label className="form-label fw-semibold">Seats to Reserve</label>
+                                    <label className="form-label fw-semibold small">Seats to Reserve</label>
                                     <input
                                         type="number"
                                         className="form-control"
@@ -219,10 +280,10 @@ function TripDetails() {
                                         max={trip.available_seats + (booked ? seats : 0)}
                                         value={seats}
                                         disabled={booked || submitting}
-                                        onChange={(e) => setSeats(Number(e.target.value))}
+                                        onChange={(e) => setSeats(Math.max(1, Number(e.target.value)))}
                                     />
                                 </Col>
-                                <Col xs={12} sm={8} md={4}>
+                                <Col xs={12} sm={8} md={5}>
                                     <Button
                                         variant={booked ? "success" : "primary"}
                                         className="w-100"
