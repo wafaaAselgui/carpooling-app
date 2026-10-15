@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { Card, Button, Container, Row, Col, Badge, Alert, Spinner, Image } from "react-bootstrap";
 import { getTripById } from "../services/trip";
 import { createBooking } from "../services/booking";
+import { getDriverReviews } from "../services/review";
 import { useAuth } from "../context/AuthContext";
 
 function TripDetails() {
@@ -11,6 +12,7 @@ function TripDetails() {
     const { user } = useAuth();
 
     const [trip, setTrip] = useState(null);
+    const [driverReviews, setDriverReviews] = useState([]);
     const [seats, setSeats] = useState(1);
     const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
@@ -22,6 +24,11 @@ function TripDetails() {
         getTripById(id)
             .then((data) => {
                 setTrip(data);
+                if (data.driver_id) {
+                    getDriverReviews(data.driver_id)
+                        .then((res) => setDriverReviews(res.reviews || []))
+                        .catch(() => {});
+                }
                 setLoading(false);
             })
             .catch((error) => {
@@ -57,7 +64,6 @@ function TripDetails() {
     const isDriver = user && user.id === trip.driver_id;
     const isTripOpen = trip.status === "scheduled";
     const isSoldOut = trip.available_seats <= 0;
-
     const isDriverVerified = trip.driver?.verification_status === "verified";
     const isCarVerified = trip.vehicle?.status === "verified";
 
@@ -86,14 +92,9 @@ function TripDetails() {
             const data = await createBooking(trip.id, seats);
             setBookingFeedback({
                 type: "success",
-                message: data.message || "Booking confirmed successfully!",
+                message: data.message || "Booking request submitted! Waiting for driver confirmation.",
             });
             setBooked(true);
-
-            setTrip((prev) => ({
-                ...prev,
-                available_seats: prev.available_seats - seats,
-            }));
         } catch (error) {
             setBookingFeedback({
                 type: "danger",
@@ -120,12 +121,12 @@ function TripDetails() {
     };
 
     return (
-        <Container className="py-4" style={{ maxWidth: "860px" }}>
+        <Container className="py-4" style={{ maxWidth: "880px" }}>
             <Button as={Link} to="/" variant="outline-secondary" size="sm" className="mb-3">
                 ← Back to trips
             </Button>
 
-            <Card className="shadow-sm border-0">
+            <Card className="shadow-sm border-0 mb-4">
                 <Card.Body className="p-4">
                     <div className="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2 border-bottom pb-3">
                         <div>
@@ -148,7 +149,7 @@ function TripDetails() {
                     </div>
 
                     <Row className="g-4">
-                        {/* Trip & Route Specs */}
+                        {/* Route Details */}
                         <Col md={6}>
                             <h5 className="fw-bold mb-3">Ride Route</h5>
                             {trip.departure_address && (
@@ -180,7 +181,7 @@ function TripDetails() {
                             )}
                         </Col>
 
-                        {/* Driver Profile & Vehicle Cards */}
+                        {/* Driver & Vehicle */}
                         <Col md={6}>
                             <h5 className="fw-bold mb-3">Driver & Trust</h5>
 
@@ -249,14 +250,14 @@ function TripDetails() {
                         </Col>
                     </Row>
 
-                    {bookingFeedback.message && (
-                        <Alert variant={bookingFeedback.type} className="mt-4" dismissible>
-                            {bookingFeedback.message}
-                        </Alert>
-                    )}
-
-                    {/* Booking Action Bar */}
+                    {/* Booking Action */}
                     <div className="mt-4 pt-3 border-top">
+                        {bookingFeedback.message && (
+                            <Alert variant={bookingFeedback.type} className="mb-3" dismissible>
+                                {bookingFeedback.message}
+                            </Alert>
+                        )}
+
                         {isDriver ? (
                             <Alert variant="secondary" className="mb-0">
                                 <strong>Driver View:</strong> You published this ride. You cannot book seats on your own trip.
@@ -277,7 +278,7 @@ function TripDetails() {
                                         type="number"
                                         className="form-control"
                                         min="1"
-                                        max={trip.available_seats + (booked ? seats : 0)}
+                                        max={trip.available_seats}
                                         value={seats}
                                         disabled={booked || submitting}
                                         onChange={(e) => setSeats(Math.max(1, Number(e.target.value)))}
@@ -291,15 +292,49 @@ function TripDetails() {
                                         disabled={booked || submitting || seats < 1}
                                     >
                                         {submitting
-                                            ? "Processing..."
+                                            ? "Requesting..."
                                             : booked
-                                            ? "Booking Confirmed ✓"
-                                            : `Book ${seats} Seat${seats > 1 ? "s" : ""} (${seats * trip.price_per_seat} MAD)`}
+                                            ? "Request Sent ✓"
+                                            : `Request ${seats} Seat${seats > 1 ? "s" : ""} (${seats * trip.price_per_seat} MAD)`}
                                     </Button>
                                 </Col>
                             </Row>
                         )}
                     </div>
+                </Card.Body>
+            </Card>
+
+            {/* Public Driver Reviews Section */}
+            <Card className="shadow-sm border-0">
+                <Card.Body className="p-4">
+                    <h5 className="fw-bold mb-3">Passenger Reviews for {trip.driver?.name}</h5>
+                    {driverReviews.length === 0 ? (
+                        <p className="text-muted small mb-0">No reviews written for this driver yet.</p>
+                    ) : (
+                        <div className="d-flex flex-column gap-3">
+                            {driverReviews.map((rev) => (
+                                <div key={rev.id} className="border-bottom pb-3">
+                                    <div className="d-flex justify-content-between align-items-center mb-1">
+                                        <div className="fw-semibold small">{rev.reviewer?.name || "Passenger"}</div>
+                                        <div className="text-warning small">
+                                            {"★".repeat(rev.rating)}{"☆".repeat(5 - rev.rating)}
+                                            <span className="text-muted ms-1">({rev.rating}/5)</span>
+                                        </div>
+                                    </div>
+                                    {rev.comment ? (
+                                        <p className="small text-muted mb-1">{rev.comment}</p>
+                                    ) : (
+                                        <p className="small text-muted fst-italic mb-1">No written comment provided.</p>
+                                    )}
+                                    <div className="text-muted" style={{ fontSize: "11px" }}>
+                                        {new Date(rev.created_at).toLocaleDateString("en-US", {
+                                            dateStyle: "medium",
+                                        })}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
                 </Card.Body>
             </Card>
         </Container>

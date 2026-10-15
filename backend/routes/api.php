@@ -58,10 +58,11 @@ Route::middleware(['auth:sanctum', 'check.banned'])->group(function () {
     Route::get('/driver/trips', [TripController::class, 'driverTrips']);
     Route::patch('/driver/trips/{id}/status', [TripController::class, 'updateStatus']);
 
-    // Bookings
+   // Bookings
     Route::post('/bookings', [BookingController::class, 'store']);
     Route::get('/bookings', [BookingController::class, 'index']);
     Route::delete('/bookings/{id}', [BookingController::class, 'destroy']);
+    Route::patch('/bookings/{id}/respond', [BookingController::class, 'respond']);
 
     // Reviews
     Route::post('/reviews', [ReviewController::class, 'store']);

@@ -43,3 +43,19 @@ export const cancelBooking = async (bookingId) => {
     return response.data;
 
 };
+
+export const respondToBooking = async (bookingId, action) => {
+    const token = localStorage.getItem("token");
+
+    const response = await api.patch(
+        `/bookings/${bookingId}/respond`,
+        { action },
+        {
+            headers: {
+                Authorization: `Bearer ${token}`,
+            },
+        }
+    );
+
+    return response.data;
+};

@@ -117,14 +117,16 @@ class TripController extends Controller
      */
     public function driverTrips(Request $request)
     {
-        $trips = Trip::with(['vehicle', 'bookings.user'])
-            ->where('driver_id', $request->user()->id)
-            ->orderBy('departure_time', 'desc')
-            ->get();
+        $trips = Trip::with([
+            'vehicle',
+            'bookings.user'
+        ])
+        ->where('driver_id', $request->user()->id)
+        ->orderBy('departure_time', 'desc')
+        ->get();
 
         return response()->json($trips);
     }
-
     /**
      * Update the status of a driver's trip (e.g., mark completed or cancelled).
      */
