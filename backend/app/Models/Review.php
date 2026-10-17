@@ -10,6 +10,7 @@ class Review extends Model
     protected $fillable = [
         'booking_id',
         'reviewer_id',
+        'reviewee_id',
         'driver_id',
         'trip_id',
         'rating',
@@ -26,11 +27,12 @@ class Review extends Model
         return $this->belongsTo(User::class, 'reviewer_id');
     }
 
-    public function driver(): BelongsTo
+    public function reviewee()
     {
-        return $this->belongsTo(User::class, 'driver_id');
+        return $this->belongsTo(User::class, 'reviewee_id');
     }
 
+ 
     public function trip(): BelongsTo
     {
         return $this->belongsTo(Trip::class);

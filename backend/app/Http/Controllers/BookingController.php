@@ -15,6 +15,7 @@ class BookingController extends Controller
     public function index(Request $request)
     {
         $bookings = Booking::with([
+            'reviews',
             'trip.vehicle',
             'trip.driver:id,name,phone,avatar_path,verification_status',
         ])

@@ -119,7 +119,8 @@ class TripController extends Controller
     {
         $trips = Trip::with([
             'vehicle',
-            'bookings.user'
+            'bookings.user:id,name,email,phone,avatar_path,verification_status',
+            'bookings.reviews'
         ])
         ->where('driver_id', $request->user()->id)
         ->orderBy('departure_time', 'desc')

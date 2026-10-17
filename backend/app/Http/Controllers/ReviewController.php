@@ -11,7 +11,7 @@ class ReviewController extends Controller
 {
     /**
      * Submit a verified review for a completed booking.
-     */
+        */
     public function store(Request $request)
     {
         $validated = $request->validate([
@@ -20,36 +20,36 @@ class ReviewController extends Controller
             'comment'    => 'nullable|string|max:1000',
         ]);
 
-        // 1. Fetch booking with its trip relation and verify ownership
-        $booking = Booking::with('trip')->where('user_id', $request->user()->id)
-            ->findOrFail($validated['booking_id']);
+        $booking = Booking::with('trip')->findOrFail($validated['booking_id']);
+        $user = $request->user();
 
-        // 2. Guard: Must be a confirmed booking
+        $isPassenger = $booking->user_id === $user->id;
+        $isDriver = $booking->trip->driver_id === $user->id;
+
+        if (!$isPassenger && !$isDriver) {
+            return response()->json(['message' => 'Unauthorized.'], 403);
+        }
+
         if ($booking->status !== 'confirmed') {
-            return response()->json([
-                'message' => 'You can only review confirmed bookings.'
-            ], 422);
+            return response()->json(['message' => 'You can only review confirmed bookings.'], 422);
         }
 
-        // 3. Guard: Trip must be completed
         if ($booking->trip->status !== 'completed') {
-            return response()->json([
-                'message' => 'You can only leave a review after the trip is completed.'
-            ], 422);
+            return response()->json(['message' => 'Trips must be completed before rating.'], 422);
         }
 
-        // 4. Guard: Check if review already exists for this booking
-        if (Review::where('booking_id', $booking->id)->exists()) {
-            return response()->json([
-                'message' => 'You have already reviewed this trip.'
-            ], 422);
+        // Prevent duplicate review from the same person for this booking
+        if (Review::where('booking_id', $booking->id)->where('reviewer_id', $user->id)->exists()) {
+            return response()->json(['message' => 'You have already submitted a review for this booking.'], 422);
         }
 
-        // 5. Create the review
+        $revieweeId = $isPassenger ? $booking->trip->driver_id : $booking->user_id;
+
         $review = Review::create([
             'booking_id'  => $booking->id,
-            'reviewer_id' => $request->user()->id,
-            'driver_id'   => $booking->trip->driver_id,
+            'reviewer_id' => $user->id,
+            'reviewee_id' => $revieweeId,
+            'driver_id'   => $booking->trip->driver_id, // keeps legacy compatibility
             'trip_id'     => $booking->trip_id,
             'rating'      => $validated['rating'],
             'comment'     => $validated['comment'] ?? null,
@@ -57,7 +57,7 @@ class ReviewController extends Controller
 
         return response()->json([
             'message' => 'Thank you! Your review has been submitted.',
-            'review'  => $review->load(['reviewer', 'driver']),
+            'review'  => $review->load(['reviewer', 'reviewee']),
         ], 201);
     }
 

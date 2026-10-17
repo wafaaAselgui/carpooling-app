@@ -82,7 +82,7 @@ class User extends Authenticatable
 
     public function reviewsReceived(): \Illuminate\Database\Eloquent\Relations\HasMany
     {
-        return $this->hasMany(Review::class, 'driver_id');
+        return $this->hasMany(Review::class, 'reviewee_id');
     }
 
     public function reviewsGiven(): \Illuminate\Database\Eloquent\Relations\HasMany

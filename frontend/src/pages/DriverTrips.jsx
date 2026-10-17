@@ -1,14 +1,23 @@
 import { useEffect, useState } from "react";
-import { Container, Card, Table, Badge, Button, Alert, Spinner, Image } from "react-bootstrap";
+import { Container, Card, Table, Badge, Button, Alert, Spinner, Image, Modal, Form } from "react-bootstrap";
 import api from "../services/api";
 import { respondToBooking } from "../services/booking";
+import { submitReview } from "../services/review";
+import { useAuth } from "../context/AuthContext";
 
 export default function DriverTrips() {
+    const { user } = useAuth();
     const [trips, setTrips] = useState([]);
     const [loading, setLoading] = useState(true);
     const [actionLoading, setActionLoading] = useState(null);
     const [feedback, setFeedback] = useState(null);
     const [error, setError] = useState(null);
+
+    // Review Modal State (Driver rating passenger)
+    const [showReviewModal, setShowReviewModal] = useState(false);
+    const [selectedBooking, setSelectedBooking] = useState(null);
+    const [reviewForm, setReviewForm] = useState({ rating: 5, comment: "" });
+    const [submittingReview, setSubmittingReview] = useState(false);
 
     const backendBase = import.meta.env.VITE_API_URL
         ? import.meta.env.VITE_API_URL.replace("/api", "")
@@ -63,6 +72,31 @@ export default function DriverTrips() {
             await loadDriverTrips();
         } catch (err) {
             setError(err.response?.data?.message || "Failed to update trip status.");
+        }
+    };
+
+    const openReviewModal = (booking) => {
+        setSelectedBooking(booking);
+        setReviewForm({ rating: 5, comment: "" });
+        setShowReviewModal(true);
+    };
+
+    const handleReviewSubmit = async (e) => {
+        e.preventDefault();
+        setSubmittingReview(true);
+        try {
+            await submitReview({
+                booking_id: selectedBooking.id,
+                rating: Number(reviewForm.rating),
+                comment: reviewForm.comment,
+            });
+            setShowReviewModal(false);
+            setFeedback(`Review submitted for passenger ${selectedBooking?.user?.name || ""}!`);
+            await loadDriverTrips();
+        } catch (err) {
+            alert(err.response?.data?.message || "Failed to submit review.");
+        } finally {
+            setSubmittingReview(false);
         }
     };
 
@@ -123,151 +157,214 @@ export default function DriverTrips() {
                     You have not published any rides yet.
                 </Alert>
             ) : (
-                trips.map((trip) => (
-                    <Card key={trip.id} className="shadow-sm border-0 mb-4">
-                        <Card.Header className="bg-white py-3 border-bottom d-flex justify-content-between align-items-center flex-wrap gap-2">
-                            <div>
-                                <h5 className="fw-bold mb-0 text-capitalize">
-                                    {trip.departure_city} → {trip.destination_city}
-                                </h5>
-                                <div className="text-muted small">
-                                    📅 {new Date(trip.departure_time).toLocaleString("en-US", {
-                                        dateStyle: "medium",
-                                        timeStyle: "short",
-                                    })}{" "}
-                                    • {trip.vehicle?.brand} {trip.vehicle?.model} ({trip.vehicle?.license_plate})
+                trips.map((trip) => {
+                    const isCompleted = trip.status === "completed";
+
+                    return (
+                        <Card key={trip.id} className="shadow-sm border-0 mb-4">
+                            <Card.Header className="bg-white py-3 border-bottom d-flex justify-content-between align-items-center flex-wrap gap-2">
+                                <div>
+                                    <h5 className="fw-bold mb-0 text-capitalize">
+                                        {trip.departure_city} → {trip.destination_city}
+                                    </h5>
+                                    <div className="text-muted small">
+                                        📅 {new Date(trip.departure_time).toLocaleString("en-US", {
+                                            dateStyle: "medium",
+                                            timeStyle: "short",
+                                        })}{" "}
+                                        • {trip.vehicle?.brand} {trip.vehicle?.model} ({trip.vehicle?.license_plate})
+                                    </div>
                                 </div>
-                            </div>
-                            <div className="d-flex align-items-center gap-2">
-                                <span className="small text-muted me-2">
-                                    Remaining Seats: <strong>{trip.available_seats} / {trip.total_seats}</strong>
-                                </span>
-                                {getTripBadge(trip.status)}
-                            </div>
-                        </Card.Header>
+                                <div className="d-flex align-items-center gap-2">
+                                    <span className="small text-muted me-2">
+                                        Remaining Seats: <strong>{trip.available_seats} / {trip.total_seats}</strong>
+                                    </span>
+                                    {getTripBadge(trip.status)}
+                                </div>
+                            </Card.Header>
 
-                        <Card.Body>
-                            <h6 className="fw-bold text-dark mb-3">Passenger Booking Requests</h6>
+                            <Card.Body>
+                                <h6 className="fw-bold text-dark mb-3">Passenger Booking Requests</h6>
 
-                            {!trip.bookings || trip.bookings.length === 0 ? (
-                                <p className="text-muted small mb-0">No booking requests received for this trip yet.</p>
-                            ) : (
-                                <Table responsive hover align="middle" className="mb-0 small">
-                                    <thead className="table-light">
-                                        <tr>
-                                            <th>Passenger</th>
-                                            <th>Contact Details</th>
-                                            <th>Seats Requested</th>
-                                            <th>Total Price</th>
-                                            <th>Status</th>
-                                            <th>Action</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {trip.bookings.map((booking) => {
-                                            const passenger = booking.user;
+                                {!trip.bookings || trip.bookings.length === 0 ? (
+                                    <p className="text-muted small mb-0">No booking requests received for this trip yet.</p>
+                                ) : (
+                                    <Table responsive hover align="middle" className="mb-0 small">
+                                        <thead className="table-light">
+                                            <tr>
+                                                <th>Passenger</th>
+                                                <th>Contact Details</th>
+                                                <th>Seats Requested</th>
+                                                <th>Total Price</th>
+                                                <th>Status</th>
+                                                <th>Action</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {trip.bookings.map((booking) => {
+                                                const passenger = booking.user;
+                                                const driverAlreadyReviewed = booking.reviews?.some(
+                                                    (r) => r.reviewer_id === user?.id
+                                                );
 
-                                            return (
-                                                <tr key={booking.id}>
-                                                    <td>
-                                                        <div className="d-flex align-items-center gap-2">
-                                                            <Image
-                                                                src={getPassengerAvatar(passenger)}
-                                                                roundedCircle
-                                                                width={36}
-                                                                height={36}
-                                                                className="object-fit-cover border shadow-sm"
-                                                                alt={passenger?.name || "Passenger"}
-                                                            />
-                                                            <div>
-                                                                <div className="fw-bold">
-                                                                    {passenger?.name || "Anonymous Passenger"}
+                                                return (
+                                                    <tr key={booking.id}>
+                                                        <td>
+                                                            <div className="d-flex align-items-center gap-2">
+                                                                <Image
+                                                                    src={getPassengerAvatar(passenger)}
+                                                                    roundedCircle
+                                                                    width={36}
+                                                                    height={36}
+                                                                    className="object-fit-cover border shadow-sm"
+                                                                    alt={passenger?.name || "Passenger"}
+                                                                />
+                                                                <div>
+                                                                    <div className="fw-bold">
+                                                                        {passenger?.name || "Anonymous Passenger"}
+                                                                    </div>
+                                                                    {passenger?.verification_status === "verified" && (
+                                                                        <span
+                                                                            className="badge bg-success-subtle text-success border border-success-subtle py-0 px-1"
+                                                                            style={{ fontSize: "10px" }}
+                                                                        >
+                                                                            ✓ ID Verified
+                                                                        </span>
+                                                                    )}
                                                                 </div>
-                                                                {passenger?.verification_status === "verified" && (
-                                                                    <span
-                                                                        className="badge bg-success-subtle text-success border border-success-subtle py-0 px-1"
-                                                                        style={{ fontSize: "10px" }}
+                                                            </div>
+                                                        </td>
+                                                        <td>
+                                                            <div>{passenger?.email || "No email"}</div>
+                                                            <div className="text-muted">
+                                                                📞 {passenger?.phone || "No phone provided"}
+                                                            </div>
+                                                        </td>
+                                                        <td>
+                                                            <strong>{booking.seats}</strong> seat{booking.seats > 1 ? "s" : ""}
+                                                        </td>
+                                                        <td className="fw-bold text-success">
+                                                            {booking.seats * trip.price_per_seat} MAD
+                                                        </td>
+                                                        <td>{getBookingBadge(booking.status)}</td>
+                                                        <td>
+                                                            {booking.status === "pending" ? (
+                                                                <div className="d-flex gap-1">
+                                                                    <Button
+                                                                        size="sm"
+                                                                        variant="success"
+                                                                        disabled={
+                                                                            actionLoading === booking.id ||
+                                                                            trip.available_seats < booking.seats
+                                                                        }
+                                                                        onClick={() =>
+                                                                            handleBookingResponse(booking.id, "accept")
+                                                                        }
                                                                     >
-                                                                        ✓ ID Verified
-                                                                    </span>
-                                                                )}
-                                                            </div>
-                                                        </div>
-                                                    </td>
-                                                    <td>
-                                                        <div>{passenger?.email || "No email"}</div>
-                                                        <div className="text-muted">
-                                                            📞 {passenger?.phone || "No phone provided"}
-                                                        </div>
-                                                    </td>
-                                                    <td>
-                                                        <strong>{booking.seats}</strong> seat{booking.seats > 1 ? "s" : ""}
-                                                    </td>
-                                                    <td className="fw-bold text-success">
-                                                        {booking.seats * trip.price_per_seat} MAD
-                                                    </td>
-                                                    <td>{getBookingBadge(booking.status)}</td>
-                                                    <td>
-                                                        {booking.status === "pending" ? (
-                                                            <div className="d-flex gap-1">
-                                                                <Button
-                                                                    size="sm"
-                                                                    variant="success"
-                                                                    disabled={
-                                                                        actionLoading === booking.id ||
-                                                                        trip.available_seats < booking.seats
-                                                                    }
-                                                                    onClick={() =>
-                                                                        handleBookingResponse(booking.id, "accept")
-                                                                    }
-                                                                >
-                                                                    Accept
-                                                                </Button>
-                                                                <Button
-                                                                    size="sm"
-                                                                    variant="outline-danger"
-                                                                    disabled={actionLoading === booking.id}
-                                                                    onClick={() =>
-                                                                        handleBookingResponse(booking.id, "reject")
-                                                                    }
-                                                                >
-                                                                    Decline
-                                                                </Button>
-                                                            </div>
-                                                        ) : (
-                                                            <span className="text-muted">—</span>
-                                                        )}
-                                                    </td>
-                                                </tr>
-                                            );
-                                        })}
-                                    </tbody>
-                                </Table>
-                            )}
-                        </Card.Body>
+                                                                        Accept
+                                                                    </Button>
+                                                                    <Button
+                                                                        size="sm"
+                                                                        variant="outline-danger"
+                                                                        disabled={actionLoading === booking.id}
+                                                                        onClick={() =>
+                                                                            handleBookingResponse(booking.id, "reject")
+                                                                        }
+                                                                    >
+                                                                        Decline
+                                                                    </Button>
+                                                                </div>
+                                                            ) : isCompleted && booking.status === "confirmed" ? (
+                                                                driverAlreadyReviewed ? (
+                                                                    <Badge bg="light" text="dark" className="border py-1 px-2">
+                                                                        ✓ Rated
+                                                                    </Badge>
+                                                                ) : (
+                                                                    <Button
+                                                                        size="sm"
+                                                                        variant="warning"
+                                                                        onClick={() => openReviewModal(booking)}
+                                                                    >
+                                                                        ★ Rate Passenger
+                                                                    </Button>
+                                                                )
+                                                            ) : (
+                                                                <span className="text-muted">—</span>
+                                                            )}
+                                                        </td>
+                                                    </tr>
+                                                );
+                                            })}
+                                        </tbody>
+                                    </Table>
+                                )}
+                            </Card.Body>
 
-                        {/* Trip Status Controls */}
-                        {trip.status === "scheduled" && (
-                            <Card.Footer className="bg-light d-flex justify-content-end gap-2 py-2">
-                                <Button
-                                    size="sm"
-                                    variant="outline-primary"
-                                    onClick={() => handleStatusChange(trip.id, "completed")}
-                                >
-                                    Mark as Completed
-                                </Button>
-                                <Button
-                                    size="sm"
-                                    variant="outline-danger"
-                                    onClick={() => handleStatusChange(trip.id, "cancelled")}
-                                >
-                                    Cancel Ride
-                                </Button>
-                            </Card.Footer>
-                        )}
-                    </Card>
-                ))
+                            {/* Trip Status Controls */}
+                            {trip.status === "scheduled" && (
+                                <Card.Footer className="bg-light d-flex justify-content-end gap-2 py-2">
+                                    <Button
+                                        size="sm"
+                                        variant="outline-primary"
+                                        onClick={() => handleStatusChange(trip.id, "completed")}
+                                    >
+                                        Mark as Completed
+                                    </Button>
+                                    <Button
+                                        size="sm"
+                                        variant="outline-danger"
+                                        onClick={() => handleStatusChange(trip.id, "cancelled")}
+                                    >
+                                        Cancel Ride
+                                    </Button>
+                                </Card.Footer>
+                            )}
+                        </Card>
+                    );
+                })
             )}
+
+            {/* Modal: Driver -> Passenger Review */}
+            <Modal show={showReviewModal} onHide={() => setShowReviewModal(false)} centered>
+                <Modal.Header closeButton>
+                    <Modal.Title>Rate Passenger: {selectedBooking?.user?.name || "Passenger"}</Modal.Title>
+                </Modal.Header>
+                <Form onSubmit={handleReviewSubmit}>
+                    <Modal.Body>
+                        <Form.Group className="mb-3">
+                            <Form.Label className="fw-semibold">Rating</Form.Label>
+                            <Form.Select
+                                value={reviewForm.rating}
+                                onChange={(e) => setReviewForm({ ...reviewForm, rating: e.target.value })}
+                            >
+                                <option value="5">★★★★★ - Excellent Passenger (5/5)</option>
+                                <option value="4">★★★★☆ - Very Good (4/5)</option>
+                                <option value="3">★★★☆☆ - Average (3/5)</option>
+                                <option value="2">★★☆☆☆ - Difficult / Unpunctual (2/5)</option>
+                                <option value="1">★☆☆☆☆ - Problematic (1/5)</option>
+                            </Form.Select>
+                        </Form.Group>
+                        <Form.Group className="mb-3">
+                            <Form.Label className="fw-semibold">Comment (Optional)</Form.Label>
+                            <Form.Control
+                                as="textarea"
+                                rows={3}
+                                placeholder="Was the passenger on time and respectful?"
+                                value={reviewForm.comment}
+                                onChange={(e) => setReviewForm({ ...reviewForm, comment: e.target.value })}
+                            />
+                        </Form.Group>
+                    </Modal.Body>
+                    <Modal.Footer>
+                        <Button variant="secondary" onClick={() => setShowReviewModal(false)}>
+                            Cancel
+                        </Button>
+                        <Button variant="warning" type="submit" disabled={submittingReview}>
+                            {submittingReview ? "Submitting..." : "Submit Review"}
+                        </Button>
+                    </Modal.Footer>
+                </Form>
+            </Modal>
         </Container>
     );
 }
