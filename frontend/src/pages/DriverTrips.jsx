@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Container, Card, Table, Badge, Button, Alert, Spinner, Image, Modal, Form } from "react-bootstrap";
+import { Link } from "react-router-dom";
 import api from "../services/api";
 import { respondToBooking } from "../services/booking";
 import { submitReview } from "../services/review";
@@ -211,17 +212,24 @@ export default function DriverTrips() {
                                                     <tr key={booking.id}>
                                                         <td>
                                                             <div className="d-flex align-items-center gap-2">
-                                                                <Image
-                                                                    src={getPassengerAvatar(passenger)}
-                                                                    roundedCircle
-                                                                    width={36}
-                                                                    height={36}
-                                                                    className="object-fit-cover border shadow-sm"
-                                                                    alt={passenger?.name || "Passenger"}
-                                                                />
+                                                                <Link to={`/users/${passenger?.id}/profile`}>
+                                                                    <Image
+                                                                        src={getPassengerAvatar(passenger)}
+                                                                        roundedCircle
+                                                                        width={36}
+                                                                        height={36}
+                                                                        className="object-fit-cover border shadow-sm"
+                                                                        alt={passenger?.name || "Passenger"}
+                                                                    />
+                                                                </Link>
                                                                 <div>
-                                                                    <div className="fw-bold">
-                                                                        {passenger?.name || "Anonymous Passenger"}
+                                                                    <div>
+                                                                        <Link
+                                                                            to={`/users/${passenger?.id}/profile`}
+                                                                            className="fw-bold text-decoration-none text-dark hover-primary"
+                                                                        >
+                                                                            {passenger?.name || "Anonymous Passenger"}
+                                                                        </Link>
                                                                     </div>
                                                                     {passenger?.verification_status === "verified" && (
                                                                         <span

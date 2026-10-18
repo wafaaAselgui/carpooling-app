@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\Trip;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use App\Notifications\TripCompletedNotification;
+use App\Notifications\BookingStatusChangedNotification;
 
 class TripController extends Controller
 {
@@ -128,6 +130,7 @@ class TripController extends Controller
 
         return response()->json($trips);
     }
+
     /**
      * Update the status of a driver's trip (e.g., mark completed or cancelled).
      */
@@ -151,11 +154,39 @@ class TripController extends Controller
         $trip->status = $newStatus;
         $trip->save();
 
-        // If driver cancels the trip, cancel all active passenger bookings
+        // 1. Handle Trip Cancellation
         if ($newStatus === 'cancelled') {
-            $trip->bookings()->where('status', '!=', 'cancelled')->update([
-                'status' => 'cancelled'
-            ]);
+            $activeBookings = $trip->bookings()
+                ->where('status', '!=', 'cancelled')
+                ->with(['user', 'trip.driver'])
+                ->get();
+
+            foreach ($activeBookings as $booking) {
+                $booking->status = 'cancelled';
+                $booking->save();
+
+                if ($booking->user) {
+                    $booking->user->notify(new BookingStatusChangedNotification($booking, 'cancelled'));
+                }
+            }
+        }
+
+        // 2. Handle Trip Completion (triggers rating prompt notifications)
+        if ($newStatus === 'completed') {
+            // Notify the driver
+            $trip->driver->notify(new TripCompletedNotification($trip, 'driver'));
+
+            // Notify all confirmed passengers
+            $confirmedBookings = $trip->bookings()
+                ->where('status', 'confirmed')
+                ->with('user')
+                ->get();
+
+            foreach ($confirmedBookings as $booking) {
+                if ($booking->user) {
+                    $booking->user->notify(new TripCompletedNotification($trip, 'passenger'));
+                }
+            }
         }
 
         return response()->json([

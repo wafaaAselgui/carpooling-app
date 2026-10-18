@@ -68,8 +68,9 @@ class ReviewController extends Controller
     {
         $driver = User::findOrFail($driverId);
 
+        // Only fetch reviews where the driver was reviewed by passengers
         $reviews = Review::with(['reviewer:id,name', 'trip:id,departure_city,destination_city,departure_time'])
-            ->where('driver_id', $driverId)
+            ->where('reviewee_id', $driverId)
             ->latest()
             ->get();
 

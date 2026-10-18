@@ -6,6 +6,7 @@ use App\Models\Booking;
 use App\Models\Trip;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use App\Notifications\BookingStatusChangedNotification;
 
 class BookingController extends Controller
 {
@@ -93,7 +94,7 @@ class BookingController extends Controller
             'action' => 'required|in:accept,reject',
         ]);
 
-        $booking = Booking::with('trip')->findOrFail($id);
+        $booking = Booking::with(['trip.driver', 'user'])->findOrFail($id);
         $trip = $booking->trip;
 
         // Verify that the authenticated user is the driver of the trip
@@ -109,7 +110,10 @@ class BookingController extends Controller
             ], 422);
         }
 
-        if ($validated['action'] === 'accept') {
+        $action = $validated['action'];
+        $newStatus = $action === 'accept' ? 'confirmed' : 'rejected';
+
+        if ($action === 'accept') {
             if ($trip->available_seats < $booking->seats) {
                 return response()->json([
                     'message' => 'Cannot accept: not enough available seats remaining on this trip.'
@@ -122,19 +126,18 @@ class BookingController extends Controller
 
                 $trip->decrement('available_seats', $booking->seats);
             });
-
-            return response()->json([
-                'message' => 'Booking request accepted.',
-                'booking' => $booking->fresh('user'),
-            ]);
+        } else {
+            $booking->status = 'rejected';
+            $booking->save();
         }
 
-        // If action is reject
-        $booking->status = 'rejected';
-        $booking->save();
+        // Dispatch notification to passenger regardless of accept or reject
+        if ($booking->user) {
+            $booking->user->notify(new BookingStatusChangedNotification($booking, $newStatus));
+        }
 
         return response()->json([
-            'message' => 'Booking request rejected.',
+            'message' => "Booking request {$newStatus}.",
             'booking' => $booking->fresh('user'),
         ]);
     }

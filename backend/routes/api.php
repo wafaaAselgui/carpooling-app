@@ -7,6 +7,9 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\TripController;
 use App\Http\Controllers\VehicleController;
+use App\Http\Controllers\UserController;
+use App\Http\Controllers\NotificationController;
+
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -15,6 +18,9 @@ use Illuminate\Support\Facades\Route;
 | Public Routes
 |--------------------------------------------------------------------------
 */
+
+// Public user profile
+Route::get('/users/{id}/profile', [UserController::class, 'show']);
 
 // Auth
 Route::post('/register', [AuthController::class, 'register']);
@@ -84,4 +90,17 @@ Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->group(function ()
     Route::get('/verifications/pending', [AdminController::class, 'pendingVerifications']);
     Route::patch('/users/{id}/verify', [AdminController::class, 'reviewVerification']);
     Route::patch('/vehicles/{id}/verify', [AdminController::class, 'reviewVehicle']);
+});
+
+
+/*
+|--------------------------------------------------------------------------
+| Notifications Routes
+|--------------------------------------------------------------------------
+*/
+
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/notifications', [NotificationController::class, 'index']);
+    Route::patch('/notifications/{id}/read', [NotificationController::class, 'markAsRead']);
+    Route::post('/notifications/read-all', [NotificationController::class, 'markAllAsRead']);
 });
