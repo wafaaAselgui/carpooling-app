@@ -7,6 +7,7 @@ use App\Models\Trip;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Notifications\BookingStatusChangedNotification;
+use App\Notifications\NewBookingRequestNotification;
 
 class BookingController extends Controller
 {
@@ -37,7 +38,7 @@ class BookingController extends Controller
             'seats'   => 'required|integer|min:1|max:8',
         ]);
 
-        $trip = Trip::findOrFail($validated['trip_id']);
+        $trip = Trip::with('driver')->findOrFail($validated['trip_id']);
 
         // Prevent driver from booking their own ride
         if ($trip->driver_id === $request->user()->id) {
@@ -79,9 +80,17 @@ class BookingController extends Controller
             'status'  => 'pending',
         ]);
 
+        // Eager load relations for clean notification details
+        $booking->load(['user', 'trip.driver']);
+
+        // Notify the driver
+        if ($trip->driver) {
+            $trip->driver->notify(new NewBookingRequestNotification($booking));
+        }
+
         return response()->json([
             'message' => 'Booking request sent! Waiting for driver approval.',
-            'booking' => $booking->load('trip'),
+            'booking' => $booking,
         ], 201);
     }
 
