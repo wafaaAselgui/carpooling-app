@@ -86,8 +86,21 @@ export default function AppNavbar() {
 
             {user ? (
               <>
-                <Nav.Link as={Link} to="/create-trip">
+                <Nav.Link as={Link} to="/create-trip" className="d-flex align-items-center gap-1">
                   Publish Trip
+                  {user?.verification_status === "verified" ? (
+                    <Badge bg="success-subtle" text="success" className="border border-success-subtle ms-1" style={{ fontSize: "10px" }}>
+                      ✓ Verified
+                    </Badge>
+                  ) : user?.verification_status === "pending" ? (
+                    <Badge bg="warning-subtle" text="dark" className="border border-warning-subtle ms-1" style={{ fontSize: "10px" }}>
+                      ⏳ Pending
+                    </Badge>
+                  ) : (
+                    <Badge bg="secondary-subtle" text="secondary" className="border border-secondary-subtle ms-1" style={{ fontSize: "10px" }}>
+                      🔒 Unverified
+                    </Badge>
+                  )}
                 </Nav.Link>
 
                 <Nav.Link as={Link} to="/my-bookings">

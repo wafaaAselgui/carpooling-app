@@ -73,6 +73,16 @@ class TripController extends Controller
 
     public function store(Request $request)
     {
+        $user = $request->user();
+
+        // 1. Guard: Check driver verification status
+        if ($user->verification_status !== 'verified') {
+            return response()->json([
+                'message' => 'Your driver profile is not verified yet. Please upload your identification documents on your profile page to publish rides.',
+                'verification_status' => $user->verification_status,
+            ], 403);
+        }
+
         $validated = $request->validate([
             'departure_city'      => 'required|string|max:100',
             'destination_city'    => 'required|string|max:100',
@@ -84,17 +94,17 @@ class TripController extends Controller
             'vehicle_id'          => 'required|exists:vehicles,id',
         ]);
 
-        // Ensure the vehicle belongs to the driver
-        $vehicle = $request->user()->vehicles()->findOrFail($validated['vehicle_id']);
+        // 2. Ensure the vehicle belongs to the driver
+        $vehicle = $user->vehicles()->findOrFail($validated['vehicle_id']);
 
-        // Block unverified vehicles
+        // 3. Block unverified vehicles
         if ($vehicle->status !== 'verified') {
             return response()->json([
                 'message' => 'You cannot publish a ride with this vehicle. Its registration and insurance documents must be verified by an administrator first.'
             ], 403);
         }
 
-        $trip = $request->user()->trips()->create([
+        $trip = $user->trips()->create([
             'vehicle_id'          => $vehicle->id,
             'departure_city'      => $validated['departure_city'],
             'destination_city'    => $validated['destination_city'],
