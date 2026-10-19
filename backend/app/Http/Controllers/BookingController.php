@@ -8,6 +8,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Notifications\BookingStatusChangedNotification;
 use App\Notifications\NewBookingRequestNotification;
+use App\Notifications\BookingCancelledByPassengerNotification;
+
 
 class BookingController extends Controller
 {
@@ -151,12 +153,12 @@ class BookingController extends Controller
         ]);
     }
 
-    /**
+   /**
      * Passenger cancels their booking
      */
     public function destroy(Request $request, $id)
     {
-        $booking = Booking::with('trip')->findOrFail($id);
+        $booking = Booking::with(['trip.driver', 'user'])->findOrFail($id);
 
         if ($booking->user_id !== $request->user()->id) {
             return response()->json(['message' => 'Unauthorized.'], 403);
@@ -166,15 +168,24 @@ class BookingController extends Controller
             return response()->json(['message' => 'This booking is already cancelled.'], 422);
         }
 
-        DB::transaction(function () use ($booking) {
-            // If it was already confirmed, restore the seats to the trip
-            if ($booking->status === 'confirmed') {
+        $wasConfirmed = $booking->status === 'confirmed';
+
+        DB::transaction(function () use ($booking, $wasConfirmed) {
+            // Restore seats if it was already confirmed
+            if ($wasConfirmed) {
                 $booking->trip->increment('available_seats', $booking->seats);
             }
 
             $booking->status = 'cancelled';
             $booking->save();
         });
+
+        // Notify the driver that the passenger cancelled
+        if ($booking->trip && $booking->trip->driver) {
+            $booking->trip->driver->notify(
+                new BookingCancelledByPassengerNotification($booking, $wasConfirmed)
+            );
+        }
 
         return response()->json([
             'message' => 'Booking cancelled successfully.',
