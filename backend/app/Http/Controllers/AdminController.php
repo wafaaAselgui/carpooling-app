@@ -7,6 +7,8 @@ use App\Models\Review;
 use App\Models\Trip;
 use App\Models\User;
 use App\Models\Vehicle;
+use App\Notifications\DriverVerificationNotification;
+use App\Notifications\VehicleVerificationNotification;
 use Illuminate\Http\Request;
 
 class AdminController extends Controller
@@ -74,6 +76,9 @@ class AdminController extends Controller
         $user->verification_status = $validated['status'];
         $user->save();
 
+        // Notify user about ID verification decision
+        $user->notify(new DriverVerificationNotification($validated['status']));
+
         return response()->json([
             'message' => "User identity status updated to {$validated['status']}.",
             'user'    => $user,
@@ -89,9 +94,14 @@ class AdminController extends Controller
             'status' => 'required|in:verified,rejected',
         ]);
 
-        $vehicle = Vehicle::findOrFail($id);
+        $vehicle = Vehicle::with('user')->findOrFail($id);
         $vehicle->status = $validated['status'];
         $vehicle->save();
+
+        // Notify vehicle owner about vehicle approval/rejection
+        if ($vehicle->user) {
+            $vehicle->user->notify(new VehicleVerificationNotification($vehicle, $validated['status']));
+        }
 
         return response()->json([
             'message' => "Vehicle status updated to {$validated['status']}.",
