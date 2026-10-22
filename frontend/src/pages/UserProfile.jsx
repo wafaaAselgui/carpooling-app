@@ -2,12 +2,23 @@ import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { Container, Card, Row, Col, Badge, Spinner, Alert, Image, Button } from "react-bootstrap";
 import { getUserPublicProfile } from "../services/user";
+import { useAuth } from "../context/AuthContext";
+import ReportModal from "../components/ReportModal";
 
 export default function UserProfile() {
     const { id } = useParams();
+    const { user: currentUser } = useAuth();
     const [profile, setProfile] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+
+    // Modal state for reporting user or individual review
+    const [reportConfig, setReportConfig] = useState({
+        show: false,
+        targetType: "user",
+        targetId: null,
+        targetName: "",
+    });
 
     const backendBase = import.meta.env.VITE_API_URL
         ? import.meta.env.VITE_API_URL.replace("/api", "")
@@ -26,6 +37,28 @@ export default function UserProfile() {
                 setLoading(false);
             });
     }, [id]);
+
+    const handleOpenReportUser = () => {
+        setReportConfig({
+            show: true,
+            targetType: "user",
+            targetId: profile.id,
+            targetName: profile.name,
+        });
+    };
+
+    const handleOpenReportReview = (review) => {
+        setReportConfig({
+            show: true,
+            targetType: "review",
+            targetId: review.id,
+            targetName: `Review by ${review.reviewer?.name || "User"}`,
+        });
+    };
+
+    const handleCloseReportModal = () => {
+        setReportConfig((prev) => ({ ...prev, show: false }));
+    };
 
     if (loading) {
         return (
@@ -47,14 +80,23 @@ export default function UserProfile() {
         );
     }
 
+    const isViewingSelf = currentUser && Number(currentUser.id) === Number(profile.id);
     const defaultAvatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(profile.name)}&background=random`;
     const avatarSrc = profile.avatar_url || defaultAvatar;
 
     return (
         <Container className="py-4" style={{ maxWidth: "860px" }}>
-            <Button as={Link} to={-1} variant="outline-secondary" size="sm" className="mb-3">
-                ← Go Back
-            </Button>
+            <div className="d-flex justify-content-between align-items-center mb-3">
+                <Button as={Link} to={-1} variant="outline-secondary" size="sm">
+                    ← Go Back
+                </Button>
+
+                {currentUser && !isViewingSelf && (
+                    <Button variant="outline-danger" size="sm" onClick={handleOpenReportUser}>
+                        🚩 Report Member
+                    </Button>
+                )}
+            </div>
 
             {/* Profile Overview Card */}
             <Card className="shadow-sm border-0 mb-4">
@@ -137,6 +179,8 @@ export default function UserProfile() {
                                     ? `${backendBase}/storage/${rev.reviewer.avatar_path}`
                                     : `https://ui-avatars.com/api/?name=${encodeURIComponent(rev.reviewer?.name || "User")}&background=random`;
 
+                                const isOwnReview = currentUser && Number(currentUser.id) === Number(rev.reviewer_id);
+
                                 return (
                                     <div key={rev.id} className="border-bottom pb-3">
                                         <div className="d-flex justify-content-between align-items-center mb-1">
@@ -174,10 +218,24 @@ export default function UserProfile() {
                                             </p>
                                         )}
 
-                                        <div className="text-muted" style={{ fontSize: "11px" }}>
-                                            {new Date(rev.created_at).toLocaleDateString("en-US", {
-                                                dateStyle: "medium",
-                                            })}
+                                        <div className="d-flex justify-content-between align-items-center mt-1">
+                                            <span className="text-muted" style={{ fontSize: "11px" }}>
+                                                {new Date(rev.created_at).toLocaleDateString("en-US", {
+                                                    dateStyle: "medium",
+                                                })}
+                                            </span>
+
+                                            {currentUser && !isOwnReview && (
+                                                <Button
+                                                    variant="link"
+                                                    size="sm"
+                                                    className="text-muted text-decoration-none p-0"
+                                                    style={{ fontSize: "11px" }}
+                                                    onClick={() => handleOpenReportReview(rev)}
+                                                >
+                                                    🚩 Report Review
+                                                </Button>
+                                            )}
                                         </div>
                                     </div>
                                 );
@@ -186,6 +244,15 @@ export default function UserProfile() {
                     )}
                 </Card.Body>
             </Card>
+
+            {/* Reporting Modal */}
+            <ReportModal
+                show={reportConfig.show}
+                onHide={handleCloseReportModal}
+                targetType={reportConfig.targetType}
+                targetId={reportConfig.targetId}
+                targetName={reportConfig.targetName}
+            />
         </Container>
     );
 }

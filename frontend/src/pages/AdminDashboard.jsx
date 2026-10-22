@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Container, Row, Col, Card, Table, Button, Badge, Alert, Spinner, Tabs, Tab } from "react-bootstrap";
+import { Link } from "react-router-dom";
 import {
     getAdminStats,
     getPendingVerifications,
@@ -7,6 +8,8 @@ import {
     reviewVehicleVerification,
     getAdminUsers,
     toggleBanUser,
+    getAdminReports,
+    updateReportStatus,
 } from "../services/admin";
 
 export default function AdminDashboard() {
@@ -14,6 +17,7 @@ export default function AdminDashboard() {
     const [pendingUsers, setPendingUsers] = useState([]);
     const [pendingVehicles, setPendingVehicles] = useState([]);
     const [allUsers, setAllUsers] = useState([]);
+    const [reports, setReports] = useState([]);
     const [loading, setLoading] = useState(true);
     const [feedback, setFeedback] = useState(null);
     const [error, setError] = useState(null);
@@ -21,24 +25,28 @@ export default function AdminDashboard() {
     const loadDashboardData = async () => {
         try {
             setLoading(true);
-            const [statsData, verifData, usersData] = await Promise.all([
+            const [statsData, verifData, usersData, reportsData] = await Promise.all([
                 getAdminStats(),
                 getPendingVerifications(),
                 getAdminUsers(),
+                getAdminReports().catch(() => ({ data: [] })),
             ]);
             setStats(statsData);
             setPendingUsers(verifData.users || []);
             setPendingVehicles(verifData.vehicles || []);
-            
-            // Handle both paginated (usersData.data) and non-paginated (usersData) responses
+
             const usersList = Array.isArray(usersData) ? usersData : (usersData?.data || []);
             setAllUsers(usersList);
+
+            const reportsList = Array.isArray(reportsData) ? reportsData : (reportsData?.data || []);
+            setReports(reportsList);
         } catch {
             setError("Unable to load administration records.");
         } finally {
             setLoading(false);
         }
     };
+
     useEffect(() => {
         loadDashboardData();
     }, []);
@@ -79,6 +87,18 @@ export default function AdminDashboard() {
         }
     };
 
+    const handleModerateReport = async (reportId, status) => {
+        setError(null);
+        setFeedback(null);
+        try {
+            const res = await updateReportStatus(reportId, status);
+            setFeedback(res.message);
+            loadDashboardData();
+        } catch (err) {
+            setError(err.response?.data?.message || "Failed to update report status.");
+        }
+    };
+
     const getStorageUrl = (path) => {
         if (!path) return null;
         if (path.startsWith("http")) return path;
@@ -87,6 +107,8 @@ export default function AdminDashboard() {
             : "http://localhost:8000";
         return `${backendBase}/storage/${path}`;
     };
+
+    const pendingReportsCount = reports.filter((r) => r.status === "pending").length;
 
     if (loading) {
         return (
@@ -125,26 +147,152 @@ export default function AdminDashboard() {
                 <Col sm={6} md={3}>
                     <Card className="border-0 shadow-sm bg-warning text-dark">
                         <Card.Body>
-                            <h6 className="small text-uppercase">Pending Identity (CIN)</h6>
-                            <h3 className="fw-bold mb-0">{stats?.pending_users || 0}</h3>
+                            <h6 className="small text-uppercase">Pending Verifications</h6>
+                            <h3 className="fw-bold mb-0">
+                                {(stats?.pending_users || 0) + (stats?.pending_vehicles || 0)}
+                            </h3>
                         </Card.Body>
                     </Card>
                 </Col>
                 <Col sm={6} md={3}>
-                    <Card className="border-0 shadow-sm bg-info text-white">
+                    <Card className="border-0 shadow-sm bg-danger text-white">
                         <Card.Body>
-                            <h6 className="small text-uppercase">Pending Vehicle Papers</h6>
-                            <h3 className="fw-bold mb-0">{stats?.pending_vehicles || 0}</h3>
+                            <h6 className="small text-uppercase">Open Reports</h6>
+                            <h3 className="fw-bold mb-0">{pendingReportsCount}</h3>
                         </Card.Body>
                     </Card>
                 </Col>
             </Row>
 
-            {/* Verification & Moderation Tabs */}
+            {/* Management Tabs */}
             <Card className="border-0 shadow-sm">
                 <Card.Body>
-                    <Tabs defaultActiveKey="identity" className="mb-3">
-                        {/* Tab 1: Pending Identity Verifications */}
+                    <Tabs defaultActiveKey="reports" className="mb-3">
+                        {/* Tab 1: User & Trip Reports */}
+                        <Tab
+                            eventKey="reports"
+                            title={
+                                <span>
+                                    🚨 Reports {pendingReportsCount > 0 && <Badge bg="danger" pill className="ms-1">{pendingReportsCount}</Badge>}
+                                </span>
+                            }
+                        >
+                            {reports.length === 0 ? (
+                                <Alert variant="light" className="text-center py-4 text-muted">
+                                    No safety or community reports submitted yet.
+                                </Alert>
+                            ) : (
+                                <Table responsive hover align="middle" className="mb-0 small">
+                                    <thead className="table-light">
+                                        <tr>
+                                            <th>Type</th>
+                                            <th>Target Entity</th>
+                                            <th>Reason</th>
+                                            <th>Details / Context</th>
+                                            <th>Reporter</th>
+                                            <th>Date</th>
+                                            <th>Status</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {reports.map((r) => {
+                                            const isPending = r.status === "pending";
+                                            return (
+                                                <tr key={r.id}>
+                                                    <td>
+                                                        <Badge
+                                                            bg={
+                                                                r.reportable_type === "user"
+                                                                    ? "info"
+                                                                    : r.reportable_type === "trip"
+                                                                    ? "primary"
+                                                                    : "secondary"
+                                                            }
+                                                            className="text-capitalize"
+                                                        >
+                                                            {r.reportable_type}
+                                                        </Badge>
+                                                    </td>
+                                                    <td>
+                                                        {r.reportable_type === "user" ? (
+                                                            <Link to={`/users/${r.reportable_id}/profile`} className="fw-semibold">
+                                                                User #{r.reportable_id} ↗
+                                                            </Link>
+                                                        ) : r.reportable_type === "trip" ? (
+                                                            <Link to={`/trips/${r.reportable_id}`} className="fw-semibold">
+                                                                Trip #{r.reportable_id} ↗
+                                                            </Link>
+                                                        ) : (
+                                                            <span>Review #{r.reportable_id}</span>
+                                                        )}
+                                                    </td>
+                                                    <td className="fw-semibold text-danger">{r.reason}</td>
+                                                    <td>
+                                                        {r.details ? (
+                                                            <span className="text-dark bg-light px-2 py-1 rounded d-inline-block">
+                                                                {r.details}
+                                                            </span>
+                                                        ) : (
+                                                            <span className="text-muted italic">—</span>
+                                                        )}
+                                                    </td>
+                                                    <td>
+                                                        <div>{r.reporter?.name || "Unknown"}</div>
+                                                        <div className="text-muted" style={{ fontSize: "11px" }}>
+                                                            {r.reporter?.email}
+                                                        </div>
+                                                    </td>
+                                                    <td className="text-muted" style={{ fontSize: "11px" }}>
+                                                        {new Date(r.created_at).toLocaleDateString("en-US", {
+                                                            dateStyle: "medium",
+                                                        })}
+                                                    </td>
+                                                    <td>
+                                                        <Badge
+                                                            bg={
+                                                                r.status === "resolved"
+                                                                    ? "success"
+                                                                    : r.status === "dismissed"
+                                                                    ? "secondary"
+                                                                    : "warning"
+                                                            }
+                                                            text={r.status === "pending" ? "dark" : undefined}
+                                                        >
+                                                            {r.status}
+                                                        </Badge>
+                                                    </td>
+                                                    <td>
+                                                        {isPending ? (
+                                                            <div className="d-flex gap-1">
+                                                                <Button
+                                                                    size="sm"
+                                                                    variant="success"
+                                                                    onClick={() => handleModerateReport(r.id, "resolved")}
+                                                                >
+                                                                    Resolve
+                                                                </Button>
+                                                                <Button
+                                                                    size="sm"
+                                                                    variant="outline-secondary"
+                                                                    onClick={() => handleModerateReport(r.id, "dismissed")}
+                                                                >
+                                                                    Dismiss
+                                                                </Button>
+                                                            </div>
+                                                        ) : (
+                                                            <span className="text-muted">—</span>
+                                                        )}
+                                                    </td>
+                                                </tr>
+                                            );
+                                        })}
+                                    </tbody>
+                                </Table>
+                            )}
+                        </Tab>
+
+                        {/* Tab 2: Pending Identity Verifications */}
                         <Tab
                             eventKey="identity"
                             title={`Identity Verifications (${pendingUsers.length})`}
@@ -214,7 +362,7 @@ export default function AdminDashboard() {
                             )}
                         </Tab>
 
-                        {/* Tab 2: Pending Vehicle Papers */}
+                        {/* Tab 3: Pending Vehicle Papers */}
                         <Tab
                             eventKey="vehicles"
                             title={`Vehicle Papers (${pendingVehicles.length})`}
@@ -244,7 +392,9 @@ export default function AdminDashboard() {
                                                 </td>
                                                 <td>
                                                     <div className="fw-bold">{v.brand} {v.model}</div>
-                                                    <div className="small text-muted">{v.license_plate} • {v.color}</div>
+                                                    <div className="small text-muted">
+                                                        {v.license_plate} • {v.color}
+                                                    </div>
                                                 </td>
                                                 <td>
                                                     {v.registration_doc_path ? (
@@ -304,7 +454,7 @@ export default function AdminDashboard() {
                             )}
                         </Tab>
 
-                        {/* Tab 3: User Accounts & Moderation */}
+                        {/* Tab 4: User Accounts & Moderation */}
                         <Tab eventKey="users" title={`All Users (${allUsers?.length || 0})`}>
                             <Table responsive hover align="middle" className="mb-0">
                                 <thead className="table-light">
@@ -320,7 +470,11 @@ export default function AdminDashboard() {
                                 <tbody>
                                     {(Array.isArray(allUsers) ? allUsers : []).map((u) => (
                                         <tr key={u.id}>
-                                            <td className="fw-bold">{u.name}</td>
+                                            <td className="fw-bold">
+                                                <Link to={`/users/${u.id}/profile`} className="text-decoration-none text-dark hover-primary">
+                                                    {u.name}
+                                                </Link>
+                                            </td>
                                             <td>{u.email}</td>
                                             <td>
                                                 <Badge

@@ -9,6 +9,7 @@ use App\Http\Controllers\TripController;
 use App\Http\Controllers\VehicleController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\ReportController;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -103,4 +104,21 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/notifications', [NotificationController::class, 'index']);
     Route::patch('/notifications/{id}/read', [NotificationController::class, 'markAsRead']);
     Route::post('/notifications/read-all', [NotificationController::class, 'markAllAsRead']);
+});
+
+
+/*
+|--------------------------------------------------------------------------
+| Reports Routes
+|--------------------------------------------------------------------------
+*/
+Route::middleware('auth:sanctum')->group(function () {
+    // User can submit report
+    Route::post('/reports', [ReportController::class, 'store']);
+
+    // Admin report moderation
+    Route::middleware('admin')->group(function () {
+        Route::get('/admin/reports', [ReportController::class, 'index']);
+        Route::patch('/admin/reports/{id}/status', [ReportController::class, 'updateStatus']);
+    });
 });

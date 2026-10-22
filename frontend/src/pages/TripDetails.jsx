@@ -5,6 +5,7 @@ import { getTripById } from "../services/trip";
 import { createBooking } from "../services/booking";
 import { getDriverReviews } from "../services/review";
 import { useAuth } from "../context/AuthContext";
+import ReportModal from "../components/ReportModal";
 
 function TripDetails() {
     const { id } = useParams();
@@ -18,6 +19,14 @@ function TripDetails() {
     const [submitting, setSubmitting] = useState(false);
     const [bookingFeedback, setBookingFeedback] = useState({ type: null, message: "" });
     const [booked, setBooked] = useState(false);
+
+    // Dynamic Report Modal State
+    const [reportConfig, setReportConfig] = useState({
+        show: false,
+        targetType: "trip",
+        targetId: null,
+        targetName: "",
+    });
 
     useEffect(() => {
         setLoading(true);
@@ -41,6 +50,37 @@ function TripDetails() {
             });
     }, [id]);
 
+    const handleOpenReportTrip = () => {
+        setReportConfig({
+            show: true,
+            targetType: "trip",
+            targetId: trip.id,
+            targetName: `${trip.departure_city} → ${trip.destination_city}`,
+        });
+    };
+
+    const handleOpenReportDriver = () => {
+        setReportConfig({
+            show: true,
+            targetType: "user",
+            targetId: trip.driver_id,
+            targetName: trip.driver?.name || "Driver",
+        });
+    };
+
+    const handleOpenReportReview = (rev) => {
+        setReportConfig({
+            show: true,
+            targetType: "review",
+            targetId: rev.id,
+            targetName: `Review by ${rev.reviewer?.name || "User"}`,
+        });
+    };
+
+    const handleCloseReportModal = () => {
+        setReportConfig((prev) => ({ ...prev, show: false }));
+    };
+
     if (loading) {
         return (
             <Container className="py-5 text-center">
@@ -61,7 +101,7 @@ function TripDetails() {
         );
     }
 
-    const isDriver = user && user.id === trip.driver_id;
+    const isDriver = user && Number(user.id) === Number(trip.driver_id);
     const isTripOpen = trip.status === "scheduled";
     const isSoldOut = trip.available_seats <= 0;
     const isDriverVerified = trip.driver?.verification_status === "verified";
@@ -73,7 +113,7 @@ function TripDetails() {
 
     const driverAvatar = trip.driver?.avatar_url || (trip.driver?.avatar_path 
         ? `${backendBase}/storage/${trip.driver.avatar_path}` 
-        : "https://placehold.co/120x120?text=Driver");
+        : `https://ui-avatars.com/api/?name=${encodeURIComponent(trip.driver?.name || "Driver")}&background=random`);
 
     const vehiclePhoto = trip.vehicle?.photo_url || (trip.vehicle?.photo 
         ? `${backendBase}/storage/${trip.vehicle.photo}` 
@@ -122,9 +162,17 @@ function TripDetails() {
 
     return (
         <Container className="py-4" style={{ maxWidth: "880px" }}>
-            <Button as={Link} to="/" variant="outline-secondary" size="sm" className="mb-3">
-                ← Back to trips
-            </Button>
+            <div className="d-flex justify-content-between align-items-center mb-3">
+                <Button as={Link} to="/" variant="outline-secondary" size="sm">
+                    ← Back to trips
+                </Button>
+
+                {user && !isDriver && (
+                    <Button variant="outline-danger" size="sm" onClick={handleOpenReportTrip}>
+                        🚩 Report this Ride
+                    </Button>
+                )}
+            </div>
 
             <Card className="shadow-sm border-0 mb-4">
                 <Card.Body className="p-4">
@@ -183,18 +231,40 @@ function TripDetails() {
 
                         {/* Driver & Vehicle */}
                         <Col md={6}>
-                            <h5 className="fw-bold mb-3">Driver & Trust</h5>
+                            <div className="d-flex justify-content-between align-items-center mb-3">
+                                <h5 className="fw-bold mb-0">Driver & Trust</h5>
+                                {user && !isDriver && (
+                                    <Button
+                                        variant="link"
+                                        size="sm"
+                                        className="text-danger p-0 text-decoration-none small"
+                                        onClick={handleOpenReportDriver}
+                                    >
+                                        🚩 Report Driver
+                                    </Button>
+                                )}
+                            </div>
 
                             <div className="d-flex align-items-center gap-3 p-3 border rounded mb-3 bg-light">
-                                <Image
-                                    src={driverAvatar}
-                                    roundedCircle
-                                    width={56}
-                                    height={56}
-                                    className="object-fit-cover border shadow-sm"
-                                />
+                                <Link to={`/users/${trip.driver_id}/profile`}>
+                                    <Image
+                                        src={driverAvatar}
+                                        roundedCircle
+                                        width={56}
+                                        height={56}
+                                        className="object-fit-cover border shadow-sm"
+                                        alt={trip.driver?.name || "Driver"}
+                                    />
+                                </Link>
                                 <div>
-                                    <h6 className="fw-bold mb-1">{trip.driver?.name}</h6>
+                                    <h6 className="fw-bold mb-1">
+                                        <Link
+                                            to={`/users/${trip.driver_id}/profile`}
+                                            className="text-decoration-none text-dark hover-primary"
+                                        >
+                                            {trip.driver?.name}
+                                        </Link>
+                                    </h6>
                                     <div className="d-flex flex-wrap gap-1 mb-1">
                                         {isDriverVerified ? (
                                             <Badge bg="success" className="py-1">
@@ -312,31 +382,57 @@ function TripDetails() {
                         <p className="text-muted small mb-0">No reviews written for this driver yet.</p>
                     ) : (
                         <div className="d-flex flex-column gap-3">
-                            {driverReviews.map((rev) => (
-                                <div key={rev.id} className="border-bottom pb-3">
-                                    <div className="d-flex justify-content-between align-items-center mb-1">
-                                        <div className="fw-semibold small">{rev.reviewer?.name || "Passenger"}</div>
-                                        <div className="text-warning small">
-                                            {"★".repeat(rev.rating)}{"☆".repeat(5 - rev.rating)}
-                                            <span className="text-muted ms-1">({rev.rating}/5)</span>
+                            {driverReviews.map((rev) => {
+                                const isOwnReview = user && Number(user.id) === Number(rev.reviewer_id);
+
+                                return (
+                                    <div key={rev.id} className="border-bottom pb-3">
+                                        <div className="d-flex justify-content-between align-items-center mb-1">
+                                            <div className="fw-semibold small">{rev.reviewer?.name || "Passenger"}</div>
+                                            <div className="text-warning small">
+                                                {"★".repeat(rev.rating)}{"☆".repeat(5 - rev.rating)}
+                                                <span className="text-muted ms-1">({rev.rating}/5)</span>
+                                            </div>
+                                        </div>
+                                        {rev.comment ? (
+                                            <p className="small text-muted mb-1">{rev.comment}</p>
+                                        ) : (
+                                            <p className="small text-muted fst-italic mb-1">No written comment provided.</p>
+                                        )}
+                                        <div className="d-flex justify-content-between align-items-center mt-1">
+                                            <span className="text-muted" style={{ fontSize: "11px" }}>
+                                                {new Date(rev.created_at).toLocaleDateString("en-US", {
+                                                    dateStyle: "medium",
+                                                })}
+                                            </span>
+                                            {user && !isOwnReview && (
+                                                <Button
+                                                    variant="link"
+                                                    size="sm"
+                                                    className="text-muted text-decoration-none p-0"
+                                                    style={{ fontSize: "11px" }}
+                                                    onClick={() => handleOpenReportReview(rev)}
+                                                >
+                                                    🚩 Report
+                                                </Button>
+                                            )}
                                         </div>
                                     </div>
-                                    {rev.comment ? (
-                                        <p className="small text-muted mb-1">{rev.comment}</p>
-                                    ) : (
-                                        <p className="small text-muted fst-italic mb-1">No written comment provided.</p>
-                                    )}
-                                    <div className="text-muted" style={{ fontSize: "11px" }}>
-                                        {new Date(rev.created_at).toLocaleDateString("en-US", {
-                                            dateStyle: "medium",
-                                        })}
-                                    </div>
-                                </div>
-                            ))}
+                                );
+                            })}
                         </div>
                     )}
                 </Card.Body>
             </Card>
+
+            {/* Reusable Report Modal */}
+            <ReportModal
+                show={reportConfig.show}
+                onHide={handleCloseReportModal}
+                targetType={reportConfig.targetType}
+                targetId={reportConfig.targetId}
+                targetName={reportConfig.targetName}
+            />
         </Container>
     );
 }

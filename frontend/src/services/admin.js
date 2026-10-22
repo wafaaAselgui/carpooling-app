@@ -38,3 +38,19 @@ export const toggleBanUser = async (userId) => {
     const res = await api.patch(`/admin/users/${userId}/toggle-ban`, {}, getHeaders());
     return res.data;
 };
+export const getAdminReports = async () => {
+    const res = await api.get("/admin/reports", getHeaders());
+    return res.data;
+};
+
+export const updateReportStatus = async (reportId, status, notes = "") => {
+    const res = await api.patch(
+        `/admin/reports/${reportId}/status`,
+        {
+            status,
+            admin_notes: notes,
+        },
+        getHeaders()
+    );
+    return res.data;
+};
