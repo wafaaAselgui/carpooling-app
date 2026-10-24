@@ -38,6 +38,7 @@ export const toggleBanUser = async (userId) => {
     const res = await api.patch(`/admin/users/${userId}/toggle-ban`, {}, getHeaders());
     return res.data;
 };
+
 export const getAdminReports = async () => {
     const res = await api.get("/admin/reports", getHeaders());
     return res.data;
@@ -52,5 +53,25 @@ export const updateReportStatus = async (reportId, status, notes = "") => {
         },
         getHeaders()
     );
+    return res.data;
+};
+
+export const adminCancelTrip = async (tripId) => {
+    const res = await api.delete(`/admin/trips/${tripId}`, getHeaders());
+    return res.data;
+};
+
+export const getUserReportHistory = async (userId) => {
+    const res = await api.get(`/admin/users/${userId}/reports-history`, getHeaders());
+    return res.data;
+};
+
+export const suspendUserAccount = async (userId, duration, reason = "") => {
+    const res = await api.post(`/admin/users/${userId}/suspend`, { duration, reason }, getHeaders());
+    return res.data;
+};
+
+export const toggleFreezeUserAccount = async (userId) => {
+    const res = await api.patch(`/admin/users/${userId}/toggle-freeze`, {}, getHeaders());
     return res.data;
 };

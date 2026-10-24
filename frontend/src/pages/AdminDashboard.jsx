@@ -10,6 +10,7 @@ import {
     toggleBanUser,
     getAdminReports,
     updateReportStatus,
+    adminCancelTrip,
 } from "../services/admin";
 
 export default function AdminDashboard() {
@@ -96,6 +97,26 @@ export default function AdminDashboard() {
             loadDashboardData();
         } catch (err) {
             setError(err.response?.data?.message || "Failed to update report status.");
+        }
+    };
+
+    const handleCancelReportedTrip = async (tripId, reportId) => {
+        const confirmed = window.confirm(
+            `Are you sure you want to cancel Trip #${tripId}? All passenger reservations for this trip will be cancelled.`
+        );
+        if (!confirmed) return;
+
+        setError(null);
+        setFeedback(null);
+        try {
+            const res = await adminCancelTrip(tripId);
+            if (reportId) {
+                await updateReportStatus(reportId, "resolved", "Trip cancelled by administrator due to report.");
+            }
+            setFeedback(res.message || `Trip #${tripId} has been successfully cancelled.`);
+            loadDashboardData();
+        } catch (err) {
+            setError(err.response?.data?.message || "Failed to cancel the trip.");
         }
     };
 
@@ -263,26 +284,40 @@ export default function AdminDashboard() {
                                                         </Badge>
                                                     </td>
                                                     <td>
-                                                        {isPending ? (
-                                                            <div className="d-flex gap-1">
+                                                        <div className="d-flex flex-wrap gap-1">
+                                                            {/* Cancel Trip button for trip-targeted reports */}
+                                                            {r.reportable_type === "trip" && (
                                                                 <Button
                                                                     size="sm"
-                                                                    variant="success"
-                                                                    onClick={() => handleModerateReport(r.id, "resolved")}
+                                                                    variant="outline-danger"
+                                                                    title="Cancel trip & drop bookings"
+                                                                    onClick={() => handleCancelReportedTrip(r.reportable_id, r.id)}
                                                                 >
-                                                                    Resolve
+                                                                    🗑️ Cancel Trip
                                                                 </Button>
-                                                                <Button
-                                                                    size="sm"
-                                                                    variant="outline-secondary"
-                                                                    onClick={() => handleModerateReport(r.id, "dismissed")}
-                                                                >
-                                                                    Dismiss
-                                                                </Button>
-                                                            </div>
-                                                        ) : (
-                                                            <span className="text-muted">—</span>
-                                                        )}
+                                                            )}
+
+                                                            {isPending ? (
+                                                                <>
+                                                                    <Button
+                                                                        size="sm"
+                                                                        variant="success"
+                                                                        onClick={() => handleModerateReport(r.id, "resolved")}
+                                                                    >
+                                                                        Resolve
+                                                                    </Button>
+                                                                    <Button
+                                                                        size="sm"
+                                                                        variant="outline-secondary"
+                                                                        onClick={() => handleModerateReport(r.id, "dismissed")}
+                                                                    >
+                                                                        Dismiss
+                                                                    </Button>
+                                                                </>
+                                                            ) : (
+                                                                <span className="text-muted align-self-center">—</span>
+                                                            )}
+                                                        </div>
                                                     </td>
                                                 </tr>
                                             );
