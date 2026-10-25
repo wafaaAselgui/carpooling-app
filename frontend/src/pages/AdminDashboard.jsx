@@ -12,6 +12,7 @@ import {
     updateReportStatus,
     adminCancelTrip,
 } from "../services/admin";
+import UserInspectionModal from "../components/admin/UserInspectionModal";
 
 export default function AdminDashboard() {
     const [stats, setStats] = useState(null);
@@ -22,6 +23,10 @@ export default function AdminDashboard() {
     const [loading, setLoading] = useState(true);
     const [feedback, setFeedback] = useState(null);
     const [error, setError] = useState(null);
+
+    // Modal state for user inspection & detailed moderation
+    const [selectedUserForInspection, setSelectedUserForInspection] = useState(null);
+    const [showInspectionModal, setShowInspectionModal] = useState(false);
 
     const loadDashboardData = async () => {
         try {
@@ -51,6 +56,22 @@ export default function AdminDashboard() {
     useEffect(() => {
         loadDashboardData();
     }, []);
+
+    const handleInspectUser = (user) => {
+        if (!user) return;
+        setSelectedUserForInspection(user);
+        setShowInspectionModal(true);
+    };
+
+    const handleInspectUserById = (userId) => {
+        const numericId = Number(userId);
+        const found = allUsers.find((u) => u.id === numericId);
+        if (found) {
+            handleInspectUser(found);
+        } else {
+            handleInspectUser({ id: numericId, name: `User #${numericId}`, verification_status: "unverified" });
+        }
+    };
 
     const handleReviewUser = async (userId, status) => {
         setError(null);
@@ -128,6 +149,10 @@ export default function AdminDashboard() {
             : "http://localhost:8000";
         return `${backendBase}/storage/${path}`;
     };
+
+    // Helper to safely recognize user/trip types regardless of namespace
+    const isUserReport = (type) => type === "user" || type === "App\\Models\\User";
+    const isTripReport = (type) => type === "trip" || type === "App\\Models\\Trip";
 
     const pendingReportsCount = reports.filter((r) => r.status === "pending").length;
 
@@ -219,28 +244,25 @@ export default function AdminDashboard() {
                                     <tbody>
                                         {reports.map((r) => {
                                             const isPending = r.status === "pending";
+                                            const isUser = isUserReport(r.reportable_type);
+                                            const isTrip = isTripReport(r.reportable_type);
+
                                             return (
                                                 <tr key={r.id}>
                                                     <td>
                                                         <Badge
-                                                            bg={
-                                                                r.reportable_type === "user"
-                                                                    ? "info"
-                                                                    : r.reportable_type === "trip"
-                                                                    ? "primary"
-                                                                    : "secondary"
-                                                            }
+                                                            bg={isUser ? "info" : isTrip ? "primary" : "secondary"}
                                                             className="text-capitalize"
                                                         >
-                                                            {r.reportable_type}
+                                                            {isUser ? "User" : isTrip ? "Trip" : "Review"}
                                                         </Badge>
                                                     </td>
                                                     <td>
-                                                        {r.reportable_type === "user" ? (
+                                                        {isUser ? (
                                                             <Link to={`/users/${r.reportable_id}/profile`} className="fw-semibold">
                                                                 User #{r.reportable_id} ↗
                                                             </Link>
-                                                        ) : r.reportable_type === "trip" ? (
+                                                        ) : isTrip ? (
                                                             <Link to={`/trips/${r.reportable_id}`} className="fw-semibold">
                                                                 Trip #{r.reportable_id} ↗
                                                             </Link>
@@ -275,8 +297,8 @@ export default function AdminDashboard() {
                                                                 r.status === "resolved"
                                                                     ? "success"
                                                                     : r.status === "dismissed"
-                                                                    ? "secondary"
-                                                                    : "warning"
+                                                                        ? "secondary"
+                                                                        : "warning"
                                                             }
                                                             text={r.status === "pending" ? "dark" : undefined}
                                                         >
@@ -284,9 +306,20 @@ export default function AdminDashboard() {
                                                         </Badge>
                                                     </td>
                                                     <td>
-                                                        <div className="d-flex flex-wrap gap-1">
-                                                            {/* Cancel Trip button for trip-targeted reports */}
-                                                            {r.reportable_type === "trip" && (
+                                                        <div className="d-flex flex-wrap gap-1 align-items-center">
+                                                            {/* Direct Inspect / Ban button for reported users */}
+                                                            {isUser && (
+                                                                <Button
+                                                                    size="sm"
+                                                                    variant="outline-info"
+                                                                    onClick={() => handleInspectUserById(r.reportable_id)}
+                                                                >
+                                                                    🔍 Inspect & Ban
+                                                                </Button>
+                                                            )}
+
+                                                            {/* Cancel Trip button for trip reports */}
+                                                            {isTrip && (
                                                                 <Button
                                                                     size="sm"
                                                                     variant="outline-danger"
@@ -297,7 +330,7 @@ export default function AdminDashboard() {
                                                                 </Button>
                                                             )}
 
-                                                            {isPending ? (
+                                                            {isPending && (
                                                                 <>
                                                                     <Button
                                                                         size="sm"
@@ -314,8 +347,6 @@ export default function AdminDashboard() {
                                                                         Dismiss
                                                                     </Button>
                                                                 </>
-                                                            ) : (
-                                                                <span className="text-muted align-self-center">—</span>
                                                             )}
                                                         </div>
                                                     </td>
@@ -428,7 +459,7 @@ export default function AdminDashboard() {
                                                 <td>
                                                     <div className="fw-bold">{v.brand} {v.model}</div>
                                                     <div className="small text-muted">
-                                                        {v.license_plate} • {v.color}
+                                                        {v.license_plate} - {v.color}
                                                     </div>
                                                 </td>
                                                 <td>
@@ -517,8 +548,8 @@ export default function AdminDashboard() {
                                                         u.verification_status === "verified"
                                                             ? "success"
                                                             : u.verification_status === "pending"
-                                                            ? "warning"
-                                                            : "secondary"
+                                                                ? "warning"
+                                                                : "secondary"
                                                     }
                                                     text={u.verification_status === "pending" ? "dark" : "white"}
                                                 >
@@ -528,20 +559,33 @@ export default function AdminDashboard() {
                                             <td>{u.vehicles_count ?? u.vehicles?.length ?? 0}</td>
                                             <td>
                                                 {u.is_banned ? (
-                                                    <Badge bg="danger">Banned</Badge>
+                                                    <Badge bg="danger">
+                                                        {u.banned_until ? "Suspended (Timed)" : "Banned"}
+                                                    </Badge>
+                                                ) : u.is_frozen ? (
+                                                    <Badge bg="warning" text="dark">❄️ Frozen</Badge>
                                                 ) : (
                                                     <Badge bg="success">Active</Badge>
                                                 )}
                                             </td>
                                             <td>
                                                 {!u.is_admin && (
-                                                    <Button
-                                                        size="sm"
-                                                        variant={u.is_banned ? "outline-success" : "outline-danger"}
-                                                        onClick={() => handleToggleBan(u.id)}
-                                                    >
-                                                        {u.is_banned ? "Unban User" : "Ban User"}
-                                                    </Button>
+                                                    <div className="d-flex gap-1">
+                                                        <Button
+                                                            size="sm"
+                                                            variant="outline-info"
+                                                            onClick={() => handleInspectUser(u)}
+                                                        >
+                                                            🔍 Inspect
+                                                        </Button>
+                                                        <Button
+                                                            size="sm"
+                                                            variant={u.is_banned ? "outline-success" : "outline-danger"}
+                                                            onClick={() => handleToggleBan(u.id)}
+                                                        >
+                                                            {u.is_banned ? "Unban" : "Ban"}
+                                                        </Button>
+                                                    </div>
                                                 )}
                                             </td>
                                         </tr>
@@ -552,6 +596,16 @@ export default function AdminDashboard() {
                     </Tabs>
                 </Card.Body>
             </Card>
+
+            {/* User Inspection & Detailed Moderation Modal */}
+            <UserInspectionModal
+                show={showInspectionModal}
+                onHide={() => setShowInspectionModal(false)}
+                user={selectedUserForInspection}
+                onUserUpdated={() => {
+                    loadDashboardData();
+                }}
+            />
         </Container>
     );
 }

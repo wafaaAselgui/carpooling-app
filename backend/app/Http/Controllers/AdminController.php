@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Booking;
+use App\Models\Report;
 use App\Models\Review;
 use App\Models\Trip;
 use App\Models\User;
@@ -174,16 +175,112 @@ class AdminController extends Controller
         }
 
         $user->is_banned = !$user->is_banned;
-        $user->save();
 
         if ($user->is_banned) {
             $user->tokens()->delete();
+        } else {
+            $user->banned_until = null;
+            $user->moderation_reason = null;
         }
+
+        $user->save();
 
         $statusMessage = $user->is_banned ? 'suspended' : 'reactivated';
 
         return response()->json([
             'message' => "User {$user->name} has been {$statusMessage}.",
+            'user'    => $user,
+        ]);
+    }
+
+    /**
+     * Retrieve complete report history for a specific user (both received and filed)
+     */
+    public function userReportHistory($id)
+    {
+        $user = User::findOrFail($id);
+
+        // Reports submitted against this user (matches string 'user' or class name)
+        $receivedReports = Report::with('reporter:id,name,email')
+            ->where('reportable_id', $id)
+            ->where(function ($q) {
+                $q->where('reportable_type', 'user')
+                  ->orWhere('reportable_type', User::class);
+            })
+            ->latest()
+            ->get();
+
+        // Reports submitted by this user
+        $submittedReports = Report::where('reporter_id', $id)
+            ->latest()
+            ->get();
+
+        return response()->json([
+            'user'              => $user,
+            'received_reports'  => $receivedReports,
+            'submitted_reports' => $submittedReports,
+        ]);
+    }
+
+    /**
+     * Apply timed or permanent suspension with mandatory reason
+     */
+    public function suspendUser(Request $request, $id)
+    {
+        $request->validate([
+            'duration' => 'required|in:24h,3d,7d,permanent',
+            'reason'   => 'required|string|max:500',
+        ]);
+
+        $user = User::findOrFail($id);
+
+        if ($user->id === $request->user()->id) {
+            return response()->json([
+                'message' => 'You cannot suspend your own account.'
+            ], 422);
+        }
+
+        $bannedUntil = match ($request->duration) {
+            '24h'       => now()->addHours(24),
+            '3d'        => now()->addDays(3),
+            '7d'        => now()->addDays(7),
+            'permanent' => null,
+        };
+
+        $user->is_banned = true;
+        $user->banned_until = $bannedUntil;
+        $user->moderation_reason = $request->reason;
+        $user->save();
+
+        // Invalidate active sessions immediately
+        $user->tokens()->delete();
+
+        return response()->json([
+            'message' => "User {$user->name} has been suspended ({$request->duration}).",
+            'user'    => $user,
+        ]);
+    }
+
+    /**
+     * Toggle administrative account freeze
+     */
+    public function toggleFreezeUser(Request $request, $id)
+    {
+        $user = User::findOrFail($id);
+
+        if ($user->id === $request->user()->id) {
+            return response()->json([
+                'message' => 'You cannot freeze your own account.'
+            ], 422);
+        }
+
+        $user->is_frozen = !$user->is_frozen;
+        $user->save();
+
+        $action = $user->is_frozen ? 'frozen' : 'unfrozen';
+
+        return response()->json([
+            'message' => "User {$user->name} account has been {$action}.",
             'user'    => $user,
         ]);
     }
