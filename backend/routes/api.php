@@ -65,7 +65,7 @@ Route::middleware(['auth:sanctum', 'check.banned'])->group(function () {
     Route::get('/driver/trips', [TripController::class, 'driverTrips']);
     Route::patch('/driver/trips/{id}/status', [TripController::class, 'updateStatus']);
 
-   // Bookings
+    // Bookings
     Route::post('/bookings', [BookingController::class, 'store']);
     Route::get('/bookings', [BookingController::class, 'index']);
     Route::delete('/bookings/{id}', [BookingController::class, 'destroy']);
@@ -73,53 +73,43 @@ Route::middleware(['auth:sanctum', 'check.banned'])->group(function () {
 
     // Reviews
     Route::post('/reviews', [ReviewController::class, 'store']);
-});
 
-/*
-|--------------------------------------------------------------------------
-| Admin Routes
-|--------------------------------------------------------------------------
-*/
-Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->group(function () {
-    Route::get('/stats', [AdminController::class, 'stats']);
-    Route::get('/users', [AdminController::class, 'users']);
-    Route::get('/trips', [AdminController::class, 'trips']);
-    Route::patch('/trips/{id}/cancel', [AdminController::class, 'cancelTrip']);
-    Route::patch('/users/{id}/toggle-ban', [AdminController::class, 'toggleBanUser']);
+    // Reports (User submission)
+    Route::post('/reports', [ReportController::class, 'store']);
 
-    // Moderation & Verifications
-    Route::get('/verifications/pending', [AdminController::class, 'pendingVerifications']);
-    Route::patch('/users/{id}/verify', [AdminController::class, 'reviewVerification']);
-    Route::patch('/vehicles/{id}/verify', [AdminController::class, 'reviewVehicle']);
-    Route::delete('/admin/trips/{id}', [AdminController::class, 'cancelTrip']);
-});
-
-
-/*
-|--------------------------------------------------------------------------
-| Notifications Routes
-|--------------------------------------------------------------------------
-*/
-
-Route::middleware('auth:sanctum')->group(function () {
+    // Notifications
     Route::get('/notifications', [NotificationController::class, 'index']);
     Route::patch('/notifications/{id}/read', [NotificationController::class, 'markAsRead']);
     Route::post('/notifications/read-all', [NotificationController::class, 'markAllAsRead']);
 });
 
-
 /*
 |--------------------------------------------------------------------------
-| Reports Routes
+| Admin Routes (All under /api/admin/*)
 |--------------------------------------------------------------------------
 */
-Route::middleware('auth:sanctum')->group(function () {
-    // User can submit report
-    Route::post('/reports', [ReportController::class, 'store']);
+Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->group(function () {
+    // Analytics & Stats
+    Route::get('/stats', [AdminController::class, 'stats']);
 
-    // Admin report moderation
-    Route::middleware('admin')->group(function () {
-        Route::get('/admin/reports', [ReportController::class, 'index']);
-        Route::patch('/admin/reports/{id}/status', [ReportController::class, 'updateStatus']);
-    });
+    // Users & Moderation
+    Route::get('/users', [AdminController::class, 'users']);
+    Route::patch('/users/{id}/toggle-ban', [AdminController::class, 'toggleBanUser']);
+    Route::get('/users/{id}/reports-history', [AdminController::class, 'userReportHistory']);
+    Route::post('/users/{id}/suspend', [AdminController::class, 'suspendUser']);
+    Route::patch('/users/{id}/toggle-freeze', [AdminController::class, 'toggleFreezeUser']);
+
+    // Document Verifications
+    Route::get('/verifications/pending', [AdminController::class, 'pendingVerifications']);
+    Route::patch('/users/{id}/verify', [AdminController::class, 'reviewVerification']);
+    Route::patch('/vehicles/{id}/verify', [AdminController::class, 'reviewVehicle']);
+
+    // Trips Moderation
+    Route::get('/trips', [AdminController::class, 'trips']);
+    Route::patch('/trips/{id}/cancel', [AdminController::class, 'cancelTrip']);
+    Route::delete('/trips/{id}', [AdminController::class, 'cancelTrip']); // Clean: resolves to DELETE /api/admin/trips/{id}
+
+    // Reports Moderation
+    Route::get('/reports', [ReportController::class, 'index']);           // Clean: resolves to GET /api/admin/reports
+    Route::patch('/reports/{id}/status', [ReportController::class, 'updateStatus']);
 });
