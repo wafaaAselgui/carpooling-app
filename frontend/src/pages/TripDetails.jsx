@@ -6,6 +6,7 @@ import { createBooking } from "../services/booking";
 import { getDriverReviews } from "../services/review";
 import { useAuth } from "../context/AuthContext";
 import ReportModal from "../components/ReportModal";
+import TripRouteMap from "../components/TripRouteMap";
 
 function TripDetails() {
     const { id } = useParams();
@@ -373,6 +374,14 @@ function TripDetails() {
                     </div>
                 </Card.Body>
             </Card>
+
+            {/* Interactive Driving Route Map */}
+            <TripRouteMap
+                departureCity={trip.departure_city}
+                destinationCity={trip.destination_city}
+                departureAddress={trip.departure_address}
+                destinationAddress={trip.destination_address}
+            />
 
             {/* Public Driver Reviews Section */}
             <Card className="shadow-sm border-0">
