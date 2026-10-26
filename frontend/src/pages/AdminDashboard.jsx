@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Container, Row, Col, Card, Table, Button, Badge, Alert, Spinner, Tabs, Tab } from "react-bootstrap";
+import { Container, Row, Col, Card, Table, Button, Alert, Spinner, Tabs, Tab } from "react-bootstrap";
 import { Link } from "react-router-dom";
 import {
     getAdminStats,
@@ -24,7 +24,6 @@ export default function AdminDashboard() {
     const [feedback, setFeedback] = useState(null);
     const [error, setError] = useState(null);
 
-    // Modal state for user inspection & detailed moderation
     const [selectedUserForInspection, setSelectedUserForInspection] = useState(null);
     const [showInspectionModal, setShowInspectionModal] = useState(false);
 
@@ -150,7 +149,6 @@ export default function AdminDashboard() {
         return `${backendBase}/storage/${path}`;
     };
 
-    // Helper to safely recognize user/trip types regardless of namespace
     const isUserReport = (type) => type === "user" || type === "App\\Models\\User";
     const isTripReport = (type) => type === "trip" || type === "App\\Models\\Trip";
 
@@ -159,15 +157,18 @@ export default function AdminDashboard() {
     if (loading) {
         return (
             <Container className="py-5 text-center">
-                <Spinner animation="border" variant="warning" />
-                <p className="mt-2 text-muted">Loading Administrator Control Center...</p>
+                <Spinner animation="border" style={{ color: "var(--color-primary)" }} />
+                <p className="mt-2 text-muted small">Loading Administrator Control Center...</p>
             </Container>
         );
     }
 
     return (
         <Container fluid className="py-4 px-lg-5">
-            <h2 className="fw-bold mb-4">Admin Dashboard</h2>
+            <div className="mb-4">
+                <h2 className="fw-bold mb-1" style={{ color: "var(--color-text-main)" }}>Admin Dashboard</h2>
+                <p className="text-muted small mb-0">Platform overview, safety reports, document verification, and account moderation.</p>
+            </div>
 
             {feedback && <Alert variant="success" onClose={() => setFeedback(null)} dismissible>{feedback}</Alert>}
             {error && <Alert variant="danger" onClose={() => setError(null)} dismissible>{error}</Alert>}
@@ -175,36 +176,36 @@ export default function AdminDashboard() {
             {/* Quick Metrics */}
             <Row className="g-3 mb-4">
                 <Col sm={6} md={3}>
-                    <Card className="border-0 shadow-sm bg-primary text-white">
+                    <Card className="border-0 shadow-sm p-2" style={{ backgroundColor: "var(--color-surface)", borderLeft: "4px solid var(--color-primary)" }}>
                         <Card.Body>
-                            <h6 className="small text-uppercase">Total Registered Users</h6>
-                            <h3 className="fw-bold mb-0">{stats?.total_users || 0}</h3>
+                            <span className="small text-uppercase text-muted fw-semibold">Registered Users</span>
+                            <h3 className="fw-bold mt-2 mb-0" style={{ color: "var(--color-text-main)" }}>{stats?.total_users || 0}</h3>
                         </Card.Body>
                     </Card>
                 </Col>
                 <Col sm={6} md={3}>
-                    <Card className="border-0 shadow-sm bg-success text-white">
+                    <Card className="border-0 shadow-sm p-2" style={{ backgroundColor: "var(--color-surface)", borderLeft: "4px solid var(--color-primary-light)" }}>
                         <Card.Body>
-                            <h6 className="small text-uppercase">Total Trips Published</h6>
-                            <h3 className="fw-bold mb-0">{stats?.total_trips || 0}</h3>
+                            <span className="small text-uppercase text-muted fw-semibold">Total Rides</span>
+                            <h3 className="fw-bold mt-2 mb-0" style={{ color: "var(--color-text-main)" }}>{stats?.total_trips || 0}</h3>
                         </Card.Body>
                     </Card>
                 </Col>
                 <Col sm={6} md={3}>
-                    <Card className="border-0 shadow-sm bg-warning text-dark">
+                    <Card className="border-0 shadow-sm p-2" style={{ backgroundColor: "var(--color-surface)", borderLeft: "4px solid var(--color-warning)" }}>
                         <Card.Body>
-                            <h6 className="small text-uppercase">Pending Verifications</h6>
-                            <h3 className="fw-bold mb-0">
+                            <span className="small text-uppercase text-muted fw-semibold">Pending Verifications</span>
+                            <h3 className="fw-bold mt-2 mb-0" style={{ color: "var(--color-warning)" }}>
                                 {(stats?.pending_users || 0) + (stats?.pending_vehicles || 0)}
                             </h3>
                         </Card.Body>
                     </Card>
                 </Col>
                 <Col sm={6} md={3}>
-                    <Card className="border-0 shadow-sm bg-danger text-white">
+                    <Card className="border-0 shadow-sm p-2" style={{ backgroundColor: "var(--color-surface)", borderLeft: "4px solid var(--color-danger)" }}>
                         <Card.Body>
-                            <h6 className="small text-uppercase">Open Reports</h6>
-                            <h3 className="fw-bold mb-0">{pendingReportsCount}</h3>
+                            <span className="small text-uppercase text-muted fw-semibold">Open Reports</span>
+                            <h3 className="fw-bold mt-2 mb-0" style={{ color: "var(--color-danger)" }}>{pendingReportsCount}</h3>
                         </Card.Body>
                     </Card>
                 </Col>
@@ -212,24 +213,27 @@ export default function AdminDashboard() {
 
             {/* Management Tabs */}
             <Card className="border-0 shadow-sm">
-                <Card.Body>
+                <Card.Body className="p-4">
                     <Tabs defaultActiveKey="reports" className="mb-3">
                         {/* Tab 1: User & Trip Reports */}
                         <Tab
                             eventKey="reports"
                             title={
-                                <span>
-                                    🚨 Reports {pendingReportsCount > 0 && <Badge bg="danger" pill className="ms-1">{pendingReportsCount}</Badge>}
+                                <span className="d-flex align-items-center gap-1">
+                                    Safety Reports
+                                    {pendingReportsCount > 0 && (
+                                        <span className="badge badge-blush ms-1">{pendingReportsCount}</span>
+                                    )}
                                 </span>
                             }
                         >
                             {reports.length === 0 ? (
-                                <Alert variant="light" className="text-center py-4 text-muted">
+                                <div className="text-center py-5 text-muted small">
                                     No safety or community reports submitted yet.
-                                </Alert>
+                                </div>
                             ) : (
                                 <Table responsive hover align="middle" className="mb-0 small">
-                                    <thead className="table-light">
+                                    <thead>
                                         <tr>
                                             <th>Type</th>
                                             <th>Target Entity</th>
@@ -250,83 +254,77 @@ export default function AdminDashboard() {
                                             return (
                                                 <tr key={r.id}>
                                                     <td>
-                                                        <Badge
-                                                            bg={isUser ? "info" : isTrip ? "primary" : "secondary"}
-                                                            className="text-capitalize"
-                                                        >
+                                                        <span className="badge badge-sage text-capitalize">
                                                             {isUser ? "User" : isTrip ? "Trip" : "Review"}
-                                                        </Badge>
+                                                        </span>
                                                     </td>
                                                     <td>
                                                         {isUser ? (
                                                             <Link to={`/users/${r.reportable_id}/profile`} className="fw-semibold">
-                                                                User #{r.reportable_id} ↗
+                                                                User #{r.reportable_id}
                                                             </Link>
                                                         ) : isTrip ? (
                                                             <Link to={`/trips/${r.reportable_id}`} className="fw-semibold">
-                                                                Trip #{r.reportable_id} ↗
+                                                                Trip #{r.reportable_id}
                                                             </Link>
                                                         ) : (
                                                             <span>Review #{r.reportable_id}</span>
                                                         )}
                                                     </td>
-                                                    <td className="fw-semibold text-danger">{r.reason}</td>
+                                                    <td className="fw-medium text-danger">{r.reason}</td>
                                                     <td>
                                                         {r.details ? (
-                                                            <span className="text-dark bg-light px-2 py-1 rounded d-inline-block">
+                                                            <span className="p-1 px-2 rounded" style={{ backgroundColor: "var(--color-canvas)" }}>
                                                                 {r.details}
                                                             </span>
                                                         ) : (
-                                                            <span className="text-muted italic">—</span>
+                                                            <span className="text-muted">—</span>
                                                         )}
                                                     </td>
                                                     <td>
-                                                        <div>{r.reporter?.name || "Unknown"}</div>
-                                                        <div className="text-muted" style={{ fontSize: "11px" }}>
-                                                            {r.reporter?.email}
-                                                        </div>
+                                                        <div className="fw-medium">{r.reporter?.name || "Unknown"}</div>
+                                                        <div className="text-muted" style={{ fontSize: "11px" }}>{r.reporter?.email}</div>
                                                     </td>
                                                     <td className="text-muted" style={{ fontSize: "11px" }}>
-                                                        {new Date(r.created_at).toLocaleDateString("en-US", {
-                                                            dateStyle: "medium",
-                                                        })}
+                                                        {new Date(r.created_at).toLocaleDateString("en-US", { dateStyle: "medium" })}
                                                     </td>
                                                     <td>
-                                                        <Badge
-                                                            bg={
+                                                        <span
+                                                            className={`badge ${
                                                                 r.status === "resolved"
-                                                                    ? "success"
+                                                                    ? "badge-sage"
                                                                     : r.status === "dismissed"
-                                                                        ? "secondary"
-                                                                        : "warning"
-                                                            }
-                                                            text={r.status === "pending" ? "dark" : undefined}
+                                                                    ? "bg-light text-muted border"
+                                                                    : "badge-blush"
+                                                            }`}
                                                         >
                                                             {r.status}
-                                                        </Badge>
+                                                        </span>
                                                     </td>
                                                     <td>
                                                         <div className="d-flex flex-wrap gap-1 align-items-center">
-                                                            {/* Direct Inspect / Ban button for reported users */}
                                                             {isUser && (
                                                                 <Button
                                                                     size="sm"
-                                                                    variant="outline-info"
+                                                                    variant="outline-primary"
                                                                     onClick={() => handleInspectUserById(r.reportable_id)}
+                                                                    className="d-flex align-items-center gap-1"
                                                                 >
-                                                                    🔍 Inspect & Ban
+                                                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                                        <circle cx="11" cy="11" r="8" />
+                                                                        <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                                                                    </svg>
+                                                                    Inspect
                                                                 </Button>
                                                             )}
 
-                                                            {/* Cancel Trip button for trip reports */}
                                                             {isTrip && (
                                                                 <Button
                                                                     size="sm"
                                                                     variant="outline-danger"
-                                                                    title="Cancel trip & drop bookings"
                                                                     onClick={() => handleCancelReportedTrip(r.reportable_id, r.id)}
                                                                 >
-                                                                    🗑️ Cancel Trip
+                                                                    Cancel Trip
                                                                 </Button>
                                                             )}
 
@@ -334,7 +332,7 @@ export default function AdminDashboard() {
                                                                 <>
                                                                     <Button
                                                                         size="sm"
-                                                                        variant="success"
+                                                                        variant="outline-success"
                                                                         onClick={() => handleModerateReport(r.id, "resolved")}
                                                                     >
                                                                         Resolve
@@ -364,16 +362,16 @@ export default function AdminDashboard() {
                             title={`Identity Verifications (${pendingUsers.length})`}
                         >
                             {pendingUsers.length === 0 ? (
-                                <Alert variant="light" className="text-center py-4 text-muted">
+                                <div className="text-center py-5 text-muted small">
                                     No pending user identity verification requests.
-                                </Alert>
+                                </div>
                             ) : (
-                                <Table responsive hover align="middle" className="mb-0">
-                                    <thead className="table-light">
+                                <Table responsive hover align="middle" className="mb-0 small">
+                                    <thead>
                                         <tr>
                                             <th>User</th>
                                             <th>Email / Phone</th>
-                                            <th>CIN Number</th>
+                                            <th>ID Number (CIN)</th>
                                             <th>Document</th>
                                             <th>Actions</th>
                                         </tr>
@@ -381,13 +379,13 @@ export default function AdminDashboard() {
                                     <tbody>
                                         {pendingUsers.map((u) => (
                                             <tr key={u.id}>
-                                                <td className="fw-bold">{u.name}</td>
+                                                <td className="fw-semibold">{u.name}</td>
                                                 <td>
-                                                    <div className="small">{u.email}</div>
-                                                    <div className="text-muted small">{u.phone || "No phone"}</div>
+                                                    <div>{u.email}</div>
+                                                    <div className="text-muted" style={{ fontSize: "11px" }}>{u.phone || "No phone"}</div>
                                                 </td>
                                                 <td>
-                                                    <Badge bg="dark">{u.cin_number}</Badge>
+                                                    <span className="badge bg-light text-dark border">{u.cin_number}</span>
                                                 </td>
                                                 <td>
                                                     {u.cin_document_path ? (
@@ -395,26 +393,26 @@ export default function AdminDashboard() {
                                                             href={getStorageUrl(u.cin_document_path)}
                                                             target="_blank"
                                                             rel="noopener noreferrer"
-                                                            className="btn btn-sm btn-outline-primary"
+                                                            className="btn btn-sm btn-outline-secondary"
                                                         >
-                                                            View Document ↗
+                                                            View Document
                                                         </a>
                                                     ) : (
-                                                        <span className="text-muted small">None</span>
+                                                        <span className="text-muted">None</span>
                                                     )}
                                                 </td>
                                                 <td>
-                                                    <div className="d-flex gap-2">
+                                                    <div className="d-flex gap-1">
                                                         <Button
                                                             size="sm"
-                                                            variant="success"
+                                                            variant="primary"
                                                             onClick={() => handleReviewUser(u.id, "verified")}
                                                         >
                                                             Approve
                                                         </Button>
                                                         <Button
                                                             size="sm"
-                                                            variant="danger"
+                                                            variant="outline-danger"
                                                             onClick={() => handleReviewUser(u.id, "rejected")}
                                                         >
                                                             Reject
@@ -431,21 +429,21 @@ export default function AdminDashboard() {
                         {/* Tab 3: Pending Vehicle Papers */}
                         <Tab
                             eventKey="vehicles"
-                            title={`Vehicle Papers (${pendingVehicles.length})`}
+                            title={`Vehicle Documents (${pendingVehicles.length})`}
                         >
                             {pendingVehicles.length === 0 ? (
-                                <Alert variant="light" className="text-center py-4 text-muted">
+                                <div className="text-center py-5 text-muted small">
                                     No pending vehicle verification requests.
-                                </Alert>
+                                </div>
                             ) : (
-                                <Table responsive hover align="middle" className="mb-0">
-                                    <thead className="table-light">
+                                <Table responsive hover align="middle" className="mb-0 small">
+                                    <thead>
                                         <tr>
                                             <th>Driver</th>
                                             <th>Vehicle</th>
-                                            <th>Registration (Carte Grise)</th>
+                                            <th>Registration</th>
                                             <th>Insurance Certificate</th>
-                                            <th>Insurance Expiry</th>
+                                            <th>Expiry</th>
                                             <th>Actions</th>
                                         </tr>
                                     </thead>
@@ -454,11 +452,11 @@ export default function AdminDashboard() {
                                             <tr key={v.id}>
                                                 <td>
                                                     <div className="fw-semibold">{v.user?.name}</div>
-                                                    <div className="text-muted small">{v.user?.email}</div>
+                                                    <div className="text-muted" style={{ fontSize: "11px" }}>{v.user?.email}</div>
                                                 </td>
                                                 <td>
-                                                    <div className="fw-bold">{v.brand} {v.model}</div>
-                                                    <div className="small text-muted">
+                                                    <div className="fw-medium">{v.brand} {v.model}</div>
+                                                    <div className="text-muted" style={{ fontSize: "11px" }}>
                                                         {v.license_plate} - {v.color}
                                                     </div>
                                                 </td>
@@ -468,12 +466,12 @@ export default function AdminDashboard() {
                                                             href={getStorageUrl(v.registration_doc_path)}
                                                             target="_blank"
                                                             rel="noopener noreferrer"
-                                                            className="btn btn-sm btn-outline-primary"
+                                                            className="btn btn-sm btn-outline-secondary"
                                                         >
-                                                            View Carte Grise ↗
+                                                            View Paper
                                                         </a>
                                                     ) : (
-                                                        <span className="text-muted small">Missing</span>
+                                                        <span className="text-muted">Missing</span>
                                                     )}
                                                 </td>
                                                 <td>
@@ -482,31 +480,31 @@ export default function AdminDashboard() {
                                                             href={getStorageUrl(v.insurance_doc_path)}
                                                             target="_blank"
                                                             rel="noopener noreferrer"
-                                                            className="btn btn-sm btn-outline-primary"
+                                                            className="btn btn-sm btn-outline-secondary"
                                                         >
-                                                            View Insurance ↗
+                                                            View Paper
                                                         </a>
                                                     ) : (
-                                                        <span className="text-muted small">Missing</span>
+                                                        <span className="text-muted">Missing</span>
                                                     )}
                                                 </td>
                                                 <td>
-                                                    <Badge bg="secondary">
+                                                    <span className="badge bg-light text-muted border">
                                                         {v.insurance_expires_at || "Not specified"}
-                                                    </Badge>
+                                                    </span>
                                                 </td>
                                                 <td>
-                                                    <div className="d-flex gap-2">
+                                                    <div className="d-flex gap-1">
                                                         <Button
                                                             size="sm"
-                                                            variant="success"
+                                                            variant="primary"
                                                             onClick={() => handleReviewVehicle(v.id, "verified")}
                                                         >
                                                             Approve
                                                         </Button>
                                                         <Button
                                                             size="sm"
-                                                            variant="danger"
+                                                            variant="outline-danger"
                                                             onClick={() => handleReviewVehicle(v.id, "rejected")}
                                                         >
                                                             Reject
@@ -521,51 +519,63 @@ export default function AdminDashboard() {
                         </Tab>
 
                         {/* Tab 4: User Accounts & Moderation */}
-                        <Tab eventKey="users" title={`All Users (${allUsers?.length || 0})`}>
-                            <Table responsive hover align="middle" className="mb-0">
-                                <thead className="table-light">
+                        <Tab eventKey="users" title={`All Accounts (${allUsers?.length || 0})`}>
+                            <Table responsive hover align="middle" className="mb-0 small">
+                                <thead>
                                     <tr>
                                         <th>Name</th>
                                         <th>Email</th>
-                                        <th>Identity Status</th>
+                                        <th>ID Status</th>
                                         <th>Vehicles</th>
-                                        <th>Account Status</th>
+                                        <th>Account Standing</th>
                                         <th>Moderation</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {(Array.isArray(allUsers) ? allUsers : []).map((u) => (
                                         <tr key={u.id}>
-                                            <td className="fw-bold">
+                                            <td className="fw-semibold">
                                                 <Link to={`/users/${u.id}/profile`} className="text-decoration-none text-dark hover-primary">
                                                     {u.name}
                                                 </Link>
                                             </td>
                                             <td>{u.email}</td>
                                             <td>
-                                                <Badge
-                                                    bg={
+                                                <span
+                                                    className={`badge ${
                                                         u.verification_status === "verified"
-                                                            ? "success"
+                                                            ? "badge-sage"
                                                             : u.verification_status === "pending"
-                                                                ? "warning"
-                                                                : "secondary"
-                                                    }
-                                                    text={u.verification_status === "pending" ? "dark" : "white"}
+                                                            ? "badge-blush"
+                                                            : "bg-light text-muted border"
+                                                    }`}
                                                 >
                                                     {u.verification_status}
-                                                </Badge>
+                                                </span>
                                             </td>
                                             <td>{u.vehicles_count ?? u.vehicles?.length ?? 0}</td>
                                             <td>
                                                 {u.is_banned ? (
-                                                    <Badge bg="danger">
+                                                    <span className="badge badge-blush">
                                                         {u.banned_until ? "Suspended (Timed)" : "Banned"}
-                                                    </Badge>
+                                                    </span>
                                                 ) : u.is_frozen ? (
-                                                    <Badge bg="warning" text="dark">❄️ Frozen</Badge>
+                                                    <span
+                                                        className="badge d-inline-flex align-items-center gap-1"
+                                                        style={{ backgroundColor: "var(--color-warning-subtle)", color: "var(--color-warning)", border: "1px solid rgba(148, 105, 39, 0.2)" }}
+                                                    >
+                                                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                                            <line x1="2" y1="12" x2="22" y2="12" />
+                                                            <line x1="12" y1="2" x2="12" y2="22" />
+                                                            <path d="m20 16-4-4 4-4" />
+                                                            <path d="m4 8 4 4-4 4" />
+                                                            <path d="m16 4-4 4-4-4" />
+                                                            <path d="m8 20 4-4 4 4" />
+                                                        </svg>
+                                                        Frozen
+                                                    </span>
                                                 ) : (
-                                                    <Badge bg="success">Active</Badge>
+                                                    <span className="badge badge-sage">Active</span>
                                                 )}
                                             </td>
                                             <td>
@@ -573,17 +583,22 @@ export default function AdminDashboard() {
                                                     <div className="d-flex gap-1">
                                                         <Button
                                                             size="sm"
-                                                            variant="outline-info"
+                                                            variant="outline-secondary"
                                                             onClick={() => handleInspectUser(u)}
+                                                            className="d-flex align-items-center gap-1"
                                                         >
-                                                            🔍 Inspect
+                                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                                <circle cx="11" cy="11" r="8" />
+                                                                <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                                                            </svg>
+                                                            Inspect
                                                         </Button>
                                                         <Button
                                                             size="sm"
-                                                            variant={u.is_banned ? "outline-success" : "outline-danger"}
+                                                            variant={u.is_banned ? "outline-primary" : "outline-danger"}
                                                             onClick={() => handleToggleBan(u.id)}
                                                         >
-                                                            {u.is_banned ? "Unban" : "Ban"}
+                                                            {u.is_banned ? "Reactivate" : "Ban"}
                                                         </Button>
                                                     </div>
                                                 )}
@@ -597,7 +612,6 @@ export default function AdminDashboard() {
                 </Card.Body>
             </Card>
 
-            {/* User Inspection & Detailed Moderation Modal */}
             <UserInspectionModal
                 show={showInspectionModal}
                 onHide={() => setShowInspectionModal(false)}

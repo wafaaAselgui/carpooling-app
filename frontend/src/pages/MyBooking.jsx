@@ -1,14 +1,34 @@
 import { useEffect, useState } from "react";
 import { getMyBookings, cancelBooking } from "../services/booking";
 import { submitReview } from "../services/review";
-import { Container, Card, Row, Col, Button, Alert, Badge, Modal, Form, Spinner } from "react-bootstrap";
+import { Container, Card, Row, Col, Button, Alert, Modal, Form, Spinner } from "react-bootstrap";
+
+function StarRatingInputs({ value, onChange }) {
+    return (
+        <div className="d-flex align-items-center gap-1">
+            {[1, 2, 3, 4, 5].map((star) => (
+                <button
+                    key={star}
+                    type="button"
+                    className="btn p-1 border-0 bg-transparent"
+                    onClick={() => onChange(star)}
+                    style={{ color: star <= value ? "var(--color-warning)" : "var(--color-border)" }}
+                    aria-label={`Rate ${star} star`}
+                >
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill={star <= value ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                    </svg>
+                </button>
+            ))}
+        </div>
+    );
+}
 
 function MyBookings() {
     const [bookings, setBookings] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
-    // Review modal state
     const [showReviewModal, setShowReviewModal] = useState(false);
     const [selectedBooking, setSelectedBooking] = useState(null);
     const [reviewForm, setReviewForm] = useState({ rating: 5, comment: "" });
@@ -23,7 +43,7 @@ function MyBookings() {
             })
             .catch((err) => {
                 console.error(err);
-                setError("Failed to load your bookings.");
+                setError("Failed to load your reservations.");
                 setLoading(false);
             });
     };
@@ -33,14 +53,12 @@ function MyBookings() {
     }, []);
 
     const handleCancel = async (bookingId) => {
-        const confirmed = window.confirm("Are you sure you want to cancel this booking?");
+        const confirmed = window.confirm("Are you sure you want to cancel this seat reservation?");
         if (!confirmed) return;
 
         try {
             await cancelBooking(bookingId);
-            setBookings((prevBookings) =>
-                prevBookings.filter((booking) => booking.id !== bookingId)
-            );
+            setBookings((prev) => prev.filter((b) => b.id !== bookingId));
         } catch (err) {
             console.error("Cancellation error:", err);
             alert(err.response?.data?.message || "Failed to cancel booking. Please try again.");
@@ -64,7 +82,7 @@ function MyBookings() {
                 comment: reviewForm.comment,
             });
             setShowReviewModal(false);
-            loadBookings(); // Reload to display the new review state
+            loadBookings();
         } catch (err) {
             console.error("Review submission error:", err);
             alert(err.response?.data?.message || "Failed to submit review.");
@@ -73,23 +91,56 @@ function MyBookings() {
         }
     };
 
+    const renderTripBadge = (status) => {
+        switch (status) {
+            case "completed":
+                return <span className="badge badge-sage">Completed</span>;
+            case "in_progress":
+                return (
+                    <span
+                        className="badge"
+                        style={{ backgroundColor: "var(--color-warning-subtle)", color: "var(--color-warning)" }}
+                    >
+                        In Progress
+                    </span>
+                );
+            case "cancelled":
+                return <span className="badge badge-blush">Cancelled</span>;
+            default:
+                return <span className="badge bg-light text-muted border">Scheduled</span>;
+        }
+    };
+
     if (loading) {
         return (
             <Container className="py-5 text-center">
-                <Spinner animation="border" variant="primary" />
-                <p className="mt-2 text-muted">Loading your bookings...</p>
+                <Spinner animation="border" style={{ color: "var(--color-primary)" }} />
+                <p className="mt-2 text-muted small">Loading your bookings...</p>
             </Container>
         );
     }
 
     return (
-        <Container className="py-4">
-            <h1 className="mb-4">My Bookings</h1>
+        <Container className="py-4 px-lg-5">
+            <div className="mb-4">
+                <h2 className="fw-bold mb-1" style={{ color: "var(--color-text-main)" }}>My Bookings</h2>
+                <p className="text-muted small mb-0">Track reservation statuses, manage cancellations, and leave reviews for completed journeys.</p>
+            </div>
 
-            {error && <Alert variant="danger">{error}</Alert>}
+            {error && (
+                <Alert
+                    dismissible
+                    onClose={() => setError(null)}
+                    style={{ backgroundColor: "var(--color-danger-subtle)", color: "var(--color-danger)", border: "none" }}
+                >
+                    {error}
+                </Alert>
+            )}
 
             {bookings.length === 0 ? (
-                <Alert variant="info">You do not have any active bookings.</Alert>
+                <Card className="border-0 shadow-sm p-5 text-center bg-white">
+                    <p className="text-muted mb-0">You have no active or completed seat reservations.</p>
+                </Card>
             ) : (
                 <Row className="g-4">
                     {bookings.map((booking) => {
@@ -99,63 +150,86 @@ function MyBookings() {
 
                         return (
                             <Col key={booking.id} xs={12} md={6} lg={4}>
-                                <Card className="h-100 shadow-sm">
-                                    <Card.Header className="d-flex justify-content-between align-items-center bg-white">
-                                        <Badge bg={isCompleted ? "success" : "primary"}>
-                                            {trip?.status ? trip.status.toUpperCase() : "TRIP"}
-                                        </Badge>
-                                        <small className="text-muted">
-                                            {trip?.departure_time
-                                                ? new Date(trip.departure_time).toLocaleDateString()
-                                                : "—"}
-                                        </small>
-                                    </Card.Header>
-
-                                    <Card.Body className="d-flex flex-column">
-                                        <Card.Title className="h5">
-                                            {trip?.departure_city} → {trip?.destination_city}
-                                        </Card.Title>
-
-                                        <p className="text-muted small mb-3">
-                                            <strong>Driver:</strong> {trip?.driver?.name || "Driver"}<br />
-                                            <strong>Vehicle:</strong> {trip?.vehicle?.brand} {trip?.vehicle?.model}
-                                        </p>
-
-                                        <div className="mb-3">
-                                            <div><strong>Seats:</strong> {booking.seats}</div>
-                                            <div><strong>Total Paid:</strong> {booking.seats * (trip?.price_per_seat || 0)} MAD</div>
-                                            <div><strong>Status:</strong> {booking.status}</div>
+                                <Card className="h-100 shadow-sm border-0 d-flex flex-column justify-content-between" style={{ backgroundColor: "#ffffff" }}>
+                                    <div>
+                                        <div
+                                            className="d-flex justify-content-between align-items-center p-3 border-bottom"
+                                            style={{ borderColor: "var(--color-border-subtle)" }}
+                                        >
+                                            {renderTripBadge(trip?.status)}
+                                            <span className="text-muted small">
+                                                {trip?.departure_time
+                                                    ? new Date(trip.departure_time).toLocaleDateString("en-US", { dateStyle: "medium" })
+                                                    : "—"}
+                                            </span>
                                         </div>
 
-                                        <div className="mt-auto pt-3 border-top d-flex justify-content-between align-items-center">
-                                            {canCancel && (
+                                        <Card.Body className="p-3">
+                                            <h5 className="fw-semibold mb-2 text-capitalize" style={{ color: "var(--color-text-main)", fontSize: "1.05rem" }}>
+                                                {trip?.departure_city}
+                                                <span className="mx-2 text-muted" style={{ fontWeight: 300 }}>→</span>
+                                                {trip?.destination_city}
+                                            </h5>
+
+                                            <div className="text-muted small mb-3">
+                                                <div><strong>Driver:</strong> {trip?.driver?.name || "Driver"}</div>
+                                                <div><strong>Vehicle:</strong> {trip?.vehicle?.brand} {trip?.vehicle?.model}</div>
+                                            </div>
+
+                                            <div
+                                                className="p-2 rounded small mb-2"
+                                                style={{ backgroundColor: "var(--color-canvas)", border: "1px solid var(--color-border-subtle)" }}
+                                            >
+                                                <div className="d-flex justify-content-between">
+                                                    <span className="text-muted">Seats Reserved:</span>
+                                                    <strong style={{ color: "var(--color-text-main)" }}>{booking.seats}</strong>
+                                                </div>
+                                                <div className="d-flex justify-content-between">
+                                                    <span className="text-muted">Total Fare:</span>
+                                                    <strong style={{ color: "var(--color-primary)" }}>
+                                                        {booking.seats * (trip?.price_per_seat || 0)} MAD
+                                                    </strong>
+                                                </div>
+                                                <div className="d-flex justify-content-between">
+                                                    <span className="text-muted">Booking State:</span>
+                                                    <span className="text-capitalize fw-medium">{booking.status}</span>
+                                                </div>
+                                            </div>
+                                        </Card.Body>
+                                    </div>
+
+                                    <div
+                                        className="p-3 border-top d-flex justify-content-between align-items-center"
+                                        style={{ borderColor: "var(--color-border-subtle)" }}
+                                    >
+                                        {canCancel ? (
+                                            <Button
+                                                variant="outline-danger"
+                                                size="sm"
+                                                onClick={() => handleCancel(booking.id)}
+                                            >
+                                                Cancel Reservation
+                                            </Button>
+                                        ) : (
+                                            <span />
+                                        )}
+
+                                        {isCompleted && (
+                                            booking.review ? (
+                                                <span className="badge badge-sage py-1 px-2 d-inline-flex align-items-center gap-1">
+                                                    <span>Reviewed: {booking.review.rating}/5</span>
+                                                </span>
+                                            ) : (
                                                 <Button
-                                                    variant="outline-danger"
+                                                    variant="outline-secondary"
                                                     size="sm"
-                                                    onClick={() => handleCancel(booking.id)}
+                                                    onClick={() => openReviewModal(booking)}
                                                 >
-                                                    Cancel Booking
+                                                    Rate Driver
                                                 </Button>
-                                            )}
-
-                                            {/* Review Trigger or Review Badge */}
-                                            {isCompleted && (
-                                                booking.review ? (
-                                                    <Badge bg="warning" text="dark" className="p-2">
-                                                        Reviewed: ★ {booking.review.rating}/5
-                                                    </Badge>
-                                                ) : (
-                                                    <Button
-                                                        variant="warning"
-                                                        size="sm"
-                                                        onClick={() => openReviewModal(booking)}
-                                                    >
-                                                        ★ Rate Driver
-                                                    </Button>
-                                                )
-                                            )}
-                                        </div>
-                                    </Card.Body>
+                                            )
+                                        )}
+                                    </div>
                                 </Card>
                             </Col>
                         );
@@ -165,41 +239,39 @@ function MyBookings() {
 
             {/* Review Submission Modal */}
             <Modal show={showReviewModal} onHide={() => setShowReviewModal(false)} centered>
-                <Modal.Header closeButton>
-                    <Modal.Title>Rate Your Trip with {selectedBooking?.trip?.driver?.name}</Modal.Title>
+                <Modal.Header closeButton style={{ borderColor: "var(--color-border-subtle)" }}>
+                    <Modal.Title className="fs-6 fw-semibold text-dark">
+                        Feedback for {selectedBooking?.trip?.driver?.name}
+                    </Modal.Title>
                 </Modal.Header>
                 <Form onSubmit={handleReviewSubmit}>
-                    <Modal.Body>
-                        <Form.Group className="mb-3">
-                            <Form.Label className="fw-semibold">Rating</Form.Label>
-                            <Form.Select
-                                value={reviewForm.rating}
-                                onChange={(e) => setReviewForm({ ...reviewForm, rating: e.target.value })}
-                            >
-                                <option value="5">★★★★★ - Excellent (5/5)</option>
-                                <option value="4">★★★★☆ - Very Good (4/5)</option>
-                                <option value="3">★★★☆☆ - Average (3/5)</option>
-                                <option value="2">★★☆☆☆ - Poor (2/5)</option>
-                                <option value="1">★☆☆☆☆ - Terrible (1/5)</option>
-                            </Form.Select>
+                    <Modal.Body className="p-4">
+                        <Form.Group className="mb-3 text-center">
+                            <Form.Label className="small fw-semibold text-muted d-block">Overall Experience</Form.Label>
+                            <div className="d-flex justify-content-center mt-1">
+                                <StarRatingInputs
+                                    value={reviewForm.rating}
+                                    onChange={(r) => setReviewForm({ ...reviewForm, rating: r })}
+                                />
+                            </div>
                         </Form.Group>
 
-                        <Form.Group className="mb-3">
-                            <Form.Label className="fw-semibold">Feedback Comment (Optional)</Form.Label>
+                        <Form.Group className="mb-2">
+                            <Form.Label className="small fw-semibold text-muted">Feedback Comment (Optional)</Form.Label>
                             <Form.Control
                                 as="textarea"
                                 rows={3}
-                                placeholder="How was the ride? Punctuality, driving, vehicle comfort..."
+                                placeholder="Punctuality, vehicle cleanliness, driving safety..."
                                 value={reviewForm.comment}
                                 onChange={(e) => setReviewForm({ ...reviewForm, comment: e.target.value })}
                             />
                         </Form.Group>
                     </Modal.Body>
-                    <Modal.Footer>
-                        <Button variant="secondary" onClick={() => setShowReviewModal(false)}>
+                    <Modal.Footer style={{ borderColor: "var(--color-border-subtle)" }}>
+                        <Button variant="outline-secondary" size="sm" onClick={() => setShowReviewModal(false)}>
                             Cancel
                         </Button>
-                        <Button variant="warning" type="submit" disabled={submittingReview}>
+                        <Button variant="primary" size="sm" type="submit" disabled={submittingReview}>
                             {submittingReview ? "Submitting..." : "Submit Review"}
                         </Button>
                     </Modal.Footer>

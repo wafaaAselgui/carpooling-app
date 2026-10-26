@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Container, Row, Col, Card, Form, Button, Badge, Alert, Spinner, Image } from "react-bootstrap";
+import { Container, Row, Col, Card, Form, Button, Alert, Spinner, Image } from "react-bootstrap";
 import { getProfile, updateProfile, uploadAvatar, submitVerification } from "../services/profile";
 import VehicleManager from "../components/VehicleManager";
 
@@ -9,7 +9,6 @@ function Profile() {
     const [statusMsg, setStatusMsg] = useState(null);
     const [errorMsg, setErrorMsg] = useState(null);
 
-    // Profile form inputs
     const [formData, setFormData] = useState({ name: "", phone: "", bio: "" });
     const [avatarFile, setAvatarFile] = useState(null);
     const [cinNumber, setCinNumber] = useState("");
@@ -56,58 +55,104 @@ function Profile() {
         try {
             await uploadAvatar(avatarFile);
             setAvatarFile(null);
-            setStatusMsg("Profile avatar updated successfully.");
+            setStatusMsg("Profile photo updated successfully.");
             loadUserData();
         } catch (err) {
-            setErrorMsg(err.response?.data?.message || "Failed to upload avatar.");
+            setErrorMsg(err.response?.data?.message || "Failed to upload photo.");
         }
     };
 
     const handleVerificationSubmit = async (e) => {
         e.preventDefault();
         if (!cinFile) {
-            setErrorMsg("Please upload an image or PDF of your National ID (CIN).");
+            setErrorMsg("Please attach an image or PDF of your National ID (CIN).");
             return;
         }
         setStatusMsg(null);
         setErrorMsg(null);
         try {
             await submitVerification(cinNumber, cinFile);
-            setStatusMsg("ID submitted successfully. Verification pending administrator review.");
+            setStatusMsg("Identification submitted successfully. Pending administrative verification.");
             loadUserData();
         } catch (err) {
-            setErrorMsg(err.response?.data?.message || "Failed to submit verification document.");
+            setErrorMsg(err.response?.data?.message || "Failed to submit verification file.");
         }
     };
 
     const renderVerificationBadge = (status) => {
         switch (status) {
             case "verified":
-                return <Badge bg="success">✓ Verified Identity</Badge>;
+                return (
+                    <span className="badge badge-sage d-inline-flex align-items-center gap-1">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                            <polyline points="20 6 9 17 4 12" />
+                        </svg>
+                        Verified Identity
+                    </span>
+                );
             case "pending":
-                return <Badge bg="warning" text="dark">⏳ Pending Verification</Badge>;
+                return (
+                    <span
+                        className="badge d-inline-flex align-items-center gap-1"
+                        style={{ backgroundColor: "var(--color-warning-subtle)", color: "var(--color-warning)", border: "1px solid rgba(148, 105, 39, 0.2)" }}
+                    >
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <circle cx="12" cy="12" r="10" />
+                            <polyline points="12 6 12 12 16 14" />
+                        </svg>
+                        Pending Review
+                    </span>
+                );
             case "rejected":
-                return <Badge bg="danger">✕ Verification Rejected</Badge>;
+                return (
+                    <span className="badge badge-blush d-inline-flex align-items-center gap-1">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                            <line x1="18" y1="6" x2="6" y2="18" />
+                            <line x1="6" y1="6" x2="18" y2="18" />
+                        </svg>
+                        Verification Declined
+                    </span>
+                );
             default:
-                return <Badge bg="secondary">Unverified Account</Badge>;
+                return <span className="badge bg-light text-muted border">Unverified Profile</span>;
         }
     };
 
     if (loading) {
         return (
             <Container className="py-5 text-center">
-                <Spinner animation="border" variant="primary" />
-                <p className="mt-2 text-muted">Loading your profile...</p>
+                <Spinner animation="border" style={{ color: "var(--color-primary)" }} />
+                <p className="mt-2 text-muted small">Loading profile...</p>
             </Container>
         );
     }
 
     return (
-        <Container className="py-4">
-            <h2 className="fw-bold mb-4">My Profile</h2>
+        <Container className="py-4 px-lg-5">
+            <div className="mb-4">
+                <h2 className="fw-bold mb-1" style={{ color: "var(--color-text-main)" }}>Account Profile</h2>
+                <p className="text-muted small mb-0">Manage personal contact details, identity trust credentials, and registered vehicles.</p>
+            </div>
 
-            {statusMsg && <Alert variant="success" onClose={() => setStatusMsg(null)} dismissible>{statusMsg}</Alert>}
-            {errorMsg && <Alert variant="danger" onClose={() => setErrorMsg(null)} dismissible>{errorMsg}</Alert>}
+            {statusMsg && (
+                <Alert
+                    dismissible
+                    onClose={() => setStatusMsg(null)}
+                    style={{ backgroundColor: "var(--color-secondary-subtle)", color: "var(--color-primary)", border: "none" }}
+                >
+                    {statusMsg}
+                </Alert>
+            )}
+
+            {errorMsg && (
+                <Alert
+                    dismissible
+                    onClose={() => setErrorMsg(null)}
+                    style={{ backgroundColor: "var(--color-danger-subtle)", color: "var(--color-danger)", border: "none" }}
+                >
+                    {errorMsg}
+                </Alert>
+            )}
 
             <Row className="g-4">
                 {/* Left Column: Avatar & Verification status */}
@@ -115,33 +160,38 @@ function Profile() {
                     <Card className="text-center shadow-sm border-0 p-3 mb-4">
                         <Card.Body>
                             <Image
-                                src={user?.avatar_url || "https://placehold.co/150x150?text=Avatar"}
+                                src={user?.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.name || "User")}&background=84A282&color=fff`}
                                 roundedCircle
-                                width={130}
-                                height={130}
+                                width={120}
+                                height={120}
                                 className="mb-3 border object-fit-cover shadow-sm"
+                                style={{ borderColor: "var(--color-border)" }}
+                                alt={user?.name || "User profile photo"}
                             />
-                            <h5 className="fw-bold mb-1">{user?.name}</h5>
-                            <div className="text-muted small mb-2">{user?.email}</div>
-                            <div className="mb-3">{renderVerificationBadge(user?.verification_status)}</div>
+                            <h5 className="fw-semibold mb-1" style={{ color: "var(--color-text-main)" }}>{user?.name}</h5>
+                            <div className="text-muted small mb-3">{user?.email}</div>
+                            <div className="mb-4">{renderVerificationBadge(user?.verification_status)}</div>
 
-                            <Form.Group className="mb-2">
-                                <Form.Control
-                                    type="file"
+                            <div className="p-3 rounded text-start" style={{ backgroundColor: "var(--color-canvas)", border: "1px solid var(--color-border-subtle)" }}>
+                                <Form.Group className="mb-2">
+                                    <Form.Label className="small fw-semibold text-muted">Update Avatar</Form.Label>
+                                    <Form.Control
+                                        type="file"
+                                        size="sm"
+                                        accept="image/*"
+                                        onChange={(e) => setAvatarFile(e.target.files[0])}
+                                    />
+                                </Form.Group>
+                                <Button
                                     size="sm"
-                                    accept="image/*"
-                                    onChange={(e) => setAvatarFile(e.target.files[0])}
-                                />
-                            </Form.Group>
-                            <Button
-                                size="sm"
-                                variant="outline-primary"
-                                className="w-100"
-                                disabled={!avatarFile}
-                                onClick={handleAvatarUpload}
-                            >
-                                Change Photo
-                            </Button>
+                                    variant="outline-secondary"
+                                    className="w-100"
+                                    disabled={!avatarFile}
+                                    onClick={handleAvatarUpload}
+                                >
+                                    Upload Photo
+                                </Button>
+                            </div>
                         </Card.Body>
                     </Card>
                 </Col>
@@ -150,12 +200,12 @@ function Profile() {
                 <Col lg={8}>
                     {/* Basic Info */}
                     <Card className="shadow-sm border-0 mb-4">
-                        <Card.Body>
-                            <h5 className="fw-bold mb-3">Personal Details</h5>
+                        <Card.Body className="p-4">
+                            <h5 className="fw-semibold mb-3" style={{ color: "var(--color-text-main)" }}>Personal Information</h5>
                             <Form onSubmit={handleInfoSubmit}>
                                 <Row className="g-3">
                                     <Col sm={6}>
-                                        <Form.Label className="small fw-semibold">Full Name</Form.Label>
+                                        <Form.Label className="small fw-semibold text-muted">Full Name</Form.Label>
                                         <Form.Control
                                             type="text"
                                             value={formData.name}
@@ -164,7 +214,7 @@ function Profile() {
                                         />
                                     </Col>
                                     <Col sm={6}>
-                                        <Form.Label className="small fw-semibold">Phone Number</Form.Label>
+                                        <Form.Label className="small fw-semibold text-muted">Phone Number</Form.Label>
                                         <Form.Control
                                             type="text"
                                             placeholder="+212 6..."
@@ -173,18 +223,18 @@ function Profile() {
                                         />
                                     </Col>
                                     <Col xs={12}>
-                                        <Form.Label className="small fw-semibold">Bio</Form.Label>
+                                        <Form.Label className="small fw-semibold text-muted">About You (Bio)</Form.Label>
                                         <Form.Control
                                             as="textarea"
                                             rows={2}
-                                            placeholder="e.g. Regular commuter between Casablanca and Rabat, non-smoker..."
+                                            placeholder="e.g. Regular commuter along the coast, non-smoker, quiet passenger..."
                                             value={formData.bio}
                                             onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
                                         />
                                     </Col>
                                 </Row>
-                                <Button type="submit" variant="primary" size="sm" className="mt-3">
-                                    Save Changes
+                                <Button type="submit" variant="primary" size="sm" className="mt-3 px-3">
+                                    Save Profile
                                 </Button>
                             </Form>
                         </Card.Body>
@@ -192,21 +242,29 @@ function Profile() {
 
                     {/* CIN Identity Verification */}
                     <Card className="shadow-sm border-0 mb-4">
-                        <Card.Body>
-                            <h5 className="fw-bold mb-2">Identity Verification (CIN)</h5>
+                        <Card.Body className="p-4">
+                            <h5 className="fw-semibold mb-2" style={{ color: "var(--color-text-main)" }}>Government ID Verification (CIN)</h5>
                             <p className="text-muted small mb-3">
-                                Verifying your identity grants a trust badge on your trips and improves passenger booking rates.
+                                Submitting a verified identity attaches a verification badge to your profile and published rides.
                             </p>
 
                             {user?.verification_status === "verified" ? (
-                                <Alert variant="success" className="mb-0">
-                                    Your National ID (CIN: <strong>{user?.cin_number}</strong>) is confirmed. Trust badge active.
+                                <Alert
+                                    className="mb-0 d-flex align-items-center gap-2 border-0"
+                                    style={{ backgroundColor: "var(--color-secondary-subtle)", color: "var(--color-primary)" }}
+                                >
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                                    </svg>
+                                    <span>
+                                        National Identity Document (CIN: <strong>{user?.cin_number}</strong>) is approved.
+                                    </span>
                                 </Alert>
                             ) : (
                                 <Form onSubmit={handleVerificationSubmit}>
                                     <Row className="g-3">
                                         <Col sm={6}>
-                                            <Form.Label className="small fw-semibold">National ID Number (CIN)</Form.Label>
+                                            <Form.Label className="small fw-semibold text-muted">National ID Number (CIN)</Form.Label>
                                             <Form.Control
                                                 type="text"
                                                 placeholder="e.g. AB123456"
@@ -216,7 +274,7 @@ function Profile() {
                                             />
                                         </Col>
                                         <Col sm={6}>
-                                            <Form.Label className="small fw-semibold">ID Document (Front Photo / PDF)</Form.Label>
+                                            <Form.Label className="small fw-semibold text-muted">ID Document (Image or PDF)</Form.Label>
                                             <Form.Control
                                                 type="file"
                                                 accept="image/*,.pdf"
@@ -227,13 +285,13 @@ function Profile() {
                                     </Row>
                                     <Button
                                         type="submit"
-                                        variant="dark"
+                                        variant="outline-primary"
                                         size="sm"
                                         className="mt-3"
                                         disabled={user?.verification_status === "pending"}
                                     >
                                         {user?.verification_status === "pending"
-                                            ? "⏳ Verification Pending..."
+                                            ? "Under Review..."
                                             : "Submit for Verification"}
                                     </Button>
                                 </Form>
@@ -241,7 +299,7 @@ function Profile() {
                         </Card.Body>
                     </Card>
 
-                    {/* Vehicles & Document Management */}
+                    {/* Vehicles Section */}
                     <VehicleManager />
                 </Col>
             </Row>

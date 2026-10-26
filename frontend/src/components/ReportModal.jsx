@@ -67,23 +67,49 @@ export default function ReportModal({ show, onHide, targetType, targetId, target
 
   return (
     <Modal show={show} onHide={onHide} centered>
-      <Modal.Header closeButton>
-        <Modal.Title className="fs-6 fw-bold text-danger">
-          🚨 Report {targetType.toUpperCase()}: {targetName}
+      <Modal.Header closeButton style={{ borderColor: "var(--color-border-subtle)" }}>
+        <Modal.Title className="fs-6 fw-semibold d-flex align-items-center gap-2" style={{ color: "var(--color-danger)" }}>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z" />
+            <line x1="4" y1="22" x2="4" y2="15" />
+          </svg>
+          <span>Report {targetType?.toUpperCase()}: {targetName}</span>
         </Modal.Title>
       </Modal.Header>
       <Form onSubmit={handleSubmit}>
-        <Modal.Body>
+        <Modal.Body className="p-4">
           {success ? (
-            <Alert variant="success" className="mb-0 text-center py-3">
-              ✓ Report received. Thank you for keeping the community safe!
+            <Alert
+              className="mb-0 text-center py-3 border-0 d-flex align-items-center justify-content-center gap-2"
+              style={{
+                backgroundColor: "var(--color-secondary-subtle)",
+                color: "var(--color-primary)",
+              }}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
+              <span>Report received. Thank you for maintaining community safety.</span>
             </Alert>
           ) : (
             <>
-              {error && <Alert variant="danger" dismissible onClose={() => setError(null)}>{error}</Alert>}
+              {error && (
+                <Alert
+                  variant="danger"
+                  dismissible
+                  onClose={() => setError(null)}
+                  style={{
+                    backgroundColor: "var(--color-danger-subtle)",
+                    borderColor: "transparent",
+                    color: "var(--color-danger)",
+                  }}
+                >
+                  {error}
+                </Alert>
+              )}
 
               <Form.Group className="mb-3">
-                <Form.Label className="small fw-semibold">Select reason</Form.Label>
+                <Form.Label className="small fw-semibold text-muted">Reason for report</Form.Label>
                 <Form.Select
                   value={selectedReason}
                   onChange={(e) => setSelectedReason(e.target.value)}
@@ -97,14 +123,14 @@ export default function ReportModal({ show, onHide, targetType, targetId, target
               </Form.Group>
 
               <Form.Group className="mb-2">
-                <Form.Label className="small fw-semibold">
-                  {selectedReason === "Other" ? "Explain the issue (Required)" : "Additional Details (Optional)"}
+                <Form.Label className="small fw-semibold text-muted">
+                  {selectedReason === "Other" ? "Explain the issue (Required)" : "Additional context (Optional)"}
                 </Form.Label>
                 <Form.Control
                   as="textarea"
                   rows={3}
                   required={selectedReason === "Other"}
-                  placeholder="Provide context or description of what happened..."
+                  placeholder="Provide any relevant details or context..."
                   value={customDetails}
                   onChange={(e) => setCustomDetails(e.target.value)}
                 />
@@ -113,11 +139,22 @@ export default function ReportModal({ show, onHide, targetType, targetId, target
           )}
         </Modal.Body>
         {!success && (
-          <Modal.Footer>
-            <Button variant="secondary" size="sm" onClick={onHide} disabled={loading}>
+          <Modal.Footer style={{ borderColor: "var(--color-border-subtle)" }}>
+            <Button
+              variant="outline-secondary"
+              size="sm"
+              onClick={onHide}
+              disabled={loading}
+              style={{ borderColor: "var(--color-border)" }}
+            >
               Cancel
             </Button>
-            <Button variant="danger" size="sm" type="submit" disabled={loading}>
+            <Button
+              size="sm"
+              type="submit"
+              disabled={loading}
+              style={{ backgroundColor: "var(--color-danger)", borderColor: "var(--color-danger)", color: "#ffffff" }}
+            >
               {loading ? "Submitting..." : "Submit Report"}
             </Button>
           </Modal.Footer>

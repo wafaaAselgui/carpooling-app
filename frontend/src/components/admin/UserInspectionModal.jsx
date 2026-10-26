@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Modal, Button, Badge, Form, Alert, Spinner, Table, Tab, Tabs } from "react-bootstrap";
+import { Modal, Button, Form, Alert, Spinner, Table, Tab, Tabs } from "react-bootstrap";
 import { getUserReportHistory, suspendUserAccount, toggleFreezeUserAccount } from "../../services/admin";
 
 export default function UserInspectionModal({ show, onHide, user, onUserUpdated }) {
@@ -9,7 +9,6 @@ export default function UserInspectionModal({ show, onHide, user, onUserUpdated 
     const [error, setError] = useState(null);
     const [successMessage, setSuccessMessage] = useState(null);
 
-    // Suspension form inputs
     const [duration, setDuration] = useState("24h");
     const [reason, setReason] = useState("");
 
@@ -27,7 +26,7 @@ export default function UserInspectionModal({ show, onHide, user, onUserUpdated 
             const data = await getUserReportHistory(user.id);
             setReportsData(data);
         } catch (err) {
-            setError("Impossible de charger l'historique des signalements.");
+            setError("Unable to load report history for this user.");
         } finally {
             setLoadingReports(false);
         }
@@ -39,11 +38,11 @@ export default function UserInspectionModal({ show, onHide, user, onUserUpdated 
         setError(null);
         try {
             const res = await suspendUserAccount(user.id, duration, reason);
-            setSuccessMessage(res.message || "Utilisateur suspendu.");
+            setSuccessMessage(res.message || "User account suspended.");
             setReason("");
             if (onUserUpdated) onUserUpdated();
         } catch (err) {
-            setError(err.response?.data?.message || "Erreur lors de la suspension.");
+            setError(err.response?.data?.message || "Error applying suspension.");
         } finally {
             setActionLoading(false);
         }
@@ -54,10 +53,10 @@ export default function UserInspectionModal({ show, onHide, user, onUserUpdated 
         setError(null);
         try {
             const res = await toggleFreezeUserAccount(user.id);
-            setSuccessMessage(res.message || "Statut de gel mis à jour.");
+            setSuccessMessage(res.message || "Account freeze status updated.");
             if (onUserUpdated) onUserUpdated();
         } catch (err) {
-            setError(err.response?.data?.message || "Erreur lors du gel du compte.");
+            setError(err.response?.data?.message || "Error updating freeze state.");
         } finally {
             setActionLoading(false);
         }
@@ -67,76 +66,108 @@ export default function UserInspectionModal({ show, onHide, user, onUserUpdated 
 
     return (
         <Modal show={show} onHide={onHide} size="lg" centered>
-            <Modal.Header closeButton>
-                <Modal.Title className="d-flex align-items-center gap-2">
-                    <span>Inspection Utilisateur : <strong>{user.name}</strong></span>
+            <Modal.Header closeButton style={{ borderColor: "var(--color-border-subtle)" }}>
+                <Modal.Title className="d-flex align-items-center gap-2 fs-6">
+                    <span className="fw-semibold text-dark">User Inspection: <strong>{user.name}</strong></span>
                     {user.is_banned ? (
-                        <Badge bg="danger">Suspendu</Badge>
+                        <span className="badge badge-blush">Suspended</span>
                     ) : user.is_frozen ? (
-                        <Badge bg="warning" text="dark">❄️ Gelé</Badge>
+                        <span
+                            className="badge d-inline-flex align-items-center gap-1"
+                            style={{ backgroundColor: "var(--color-warning-subtle)", color: "var(--color-warning)", border: "1px solid rgba(148, 105, 39, 0.2)" }}
+                        >
+                            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                <line x1="2" y1="12" x2="22" y2="12" />
+                                <line x1="12" y1="2" x2="12" y2="22" />
+                                <path d="m20 16-4-4 4-4" />
+                                <path d="m4 8 4 4-4 4" />
+                                <path d="m16 4-4 4-4-4" />
+                                <path d="m8 20 4-4 4 4" />
+                            </svg>
+                            Frozen
+                        </span>
                     ) : (
-                        <Badge bg="success">Actif</Badge>
+                        <span className="badge badge-sage">Active</span>
                     )}
                 </Modal.Title>
             </Modal.Header>
 
-            <Modal.Body>
-                {error && <Alert variant="danger">{error}</Alert>}
-                {successMessage && <Alert variant="success">{successMessage}</Alert>}
+            <Modal.Body className="p-4">
+                {error && (
+                    <Alert
+                        variant="danger"
+                        dismissible
+                        onClose={() => setError(null)}
+                        style={{ backgroundColor: "var(--color-danger-subtle)", borderColor: "transparent", color: "var(--color-danger)" }}
+                    >
+                        {error}
+                    </Alert>
+                )}
+                {successMessage && (
+                    <Alert
+                        className="border-0"
+                        style={{ backgroundColor: "var(--color-secondary-subtle)", color: "var(--color-primary)" }}
+                    >
+                        {successMessage}
+                    </Alert>
+                )}
 
-                {/* Profile Overview */}
-                <div className="card bg-light p-3 mb-3 border-0">
-                    <div className="row g-2">
-                        <div className="col-md-6"><strong>Email:</strong> {user.email}</div>
-                        <div className="col-md-6"><strong>CIN:</strong> {user.cin_number || "Non renseigné"}</div>
-                        <div className="col-md-6"><strong>Vérification:</strong> {user.verification_status}</div>
+                {/* Profile Overview Card */}
+                <div className="card p-3 mb-3 border-0" style={{ backgroundColor: "var(--color-canvas)", border: "1px solid var(--color-border-subtle)" }}>
+                    <div className="row g-2 small">
+                        <div className="col-md-6"><strong className="text-muted">Email:</strong> {user.email}</div>
+                        <div className="col-md-6"><strong className="text-muted">National ID (CIN):</strong> {user.cin_number || "Not provided"}</div>
                         <div className="col-md-6">
-                            <strong>Date d'inscription:</strong>{" "}
-                            {new Date(user.created_at).toLocaleDateString()}
+                            <strong className="text-muted">Verification Status:</strong>{" "}
+                            <span className="text-capitalize">{user.verification_status}</span>
+                        </div>
+                        <div className="col-md-6">
+                            <strong className="text-muted">Registered Since:</strong>{" "}
+                            {new Date(user.created_at).toLocaleDateString("en-US", { dateStyle: "medium" })}
                         </div>
                         {user.banned_until && (
                             <div className="col-12 text-danger">
-                                <strong>Fin de suspension:</strong>{" "}
-                                {new Date(user.banned_until).toLocaleString()}
+                                <strong>Suspension Active Until:</strong>{" "}
+                                {new Date(user.banned_until).toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short" })}
                             </div>
                         )}
                         {user.moderation_reason && (
                             <div className="col-12 text-muted">
-                                <strong>Motif modération:</strong> {user.moderation_reason}
+                                <strong>Moderation Note:</strong> {user.moderation_reason}
                             </div>
                         )}
                     </div>
                 </div>
 
-                {/* Action Tabs */}
+                {/* Tab Navigation */}
                 <Tabs defaultActiveKey="reports" className="mb-3">
-                    <Tab eventKey="reports" title={`Signalements (${reportsData.received_reports?.length || 0})`}>
+                    <Tab eventKey="reports" title={`Reports Received (${reportsData.received_reports?.length || 0})`}>
                         {loadingReports ? (
-                            <div className="text-center py-4">
-                                <Spinner animation="border" size="sm" /> Chargement de l'historique...
+                            <div className="text-center py-4 text-muted small">
+                                <Spinner animation="border" size="sm" style={{ color: "var(--color-primary)" }} /> Loading report records...
                             </div>
                         ) : reportsData.received_reports?.length === 0 ? (
-                            <p className="text-muted text-center py-3">Aucun signalement reçu pour cet utilisateur.</p>
+                            <p className="text-muted text-center py-3 small">No reports filed against this user.</p>
                         ) : (
-                            <Table responsive striped size="sm">
+                            <Table responsive hover size="sm" className="mb-0 small align-middle">
                                 <thead>
                                     <tr>
                                         <th>Date</th>
-                                        <th>Motif</th>
-                                        <th>Signalé par</th>
-                                        <th>Statut</th>
+                                        <th>Reason</th>
+                                        <th>Reported By</th>
+                                        <th>Status</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {reportsData.received_reports.map((r) => (
                                         <tr key={r.id}>
-                                            <td>{new Date(r.created_at).toLocaleDateString()}</td>
-                                            <td>{r.reason}</td>
-                                            <td>{r.reporter?.name || "Anonyme"}</td>
+                                            <td className="text-muted">{new Date(r.created_at).toLocaleDateString()}</td>
+                                            <td className="fw-medium text-danger">{r.reason}</td>
+                                            <td>{r.reporter?.name || "Anonymous"}</td>
                                             <td>
-                                                <Badge bg={r.status === "resolved" ? "success" : "secondary"}>
+                                                <span className={`badge ${r.status === "resolved" ? "badge-sage" : "bg-light text-muted border"}`}>
                                                     {r.status}
-                                                </Badge>
+                                                </span>
                                             </td>
                                         </tr>
                                     ))}
@@ -145,45 +176,52 @@ export default function UserInspectionModal({ show, onHide, user, onUserUpdated 
                         )}
                     </Tab>
 
-                    <Tab eventKey="moderation" title="Actions de Modération">
-                        <div className="border rounded p-3 mb-3">
-                            <h6 className="fw-bold mb-2">Geler / Dégeler le Compte</h6>
-                            <p className="text-muted small">
-                                Le gel bloque la création de nouveaux trajets et les réservations, mais permet à l'utilisateur de se connecter et d'accéder à son profil.
+                    <Tab eventKey="moderation" title="Administrative Actions">
+                        {/* Freeze Section */}
+                        <div className="p-3 mb-3 rounded" style={{ backgroundColor: "var(--color-canvas)", border: "1px solid var(--color-border-subtle)" }}>
+                            <h6 className="fw-semibold mb-1" style={{ color: "var(--color-text-main)" }}>
+                                {user.is_frozen ? "Unfreeze Account" : "Freeze Account"}
+                            </h6>
+                            <p className="text-muted small mb-3">
+                                Freezing temporarily blocks publishing rides and booking seats, but permits the user to view their history and profile.
                             </p>
                             <Button
-                                variant={user.is_frozen ? "outline-success" : "warning"}
+                                variant={user.is_frozen ? "outline-primary" : "outline-secondary"}
                                 size="sm"
                                 disabled={actionLoading}
                                 onClick={handleToggleFreeze}
                             >
-                                {user.is_frozen ? "Dégeler le Compte" : "❄️ Geler le Compte"}
+                                {user.is_frozen ? "Lift Account Freeze" : "Freeze Account Access"}
                             </Button>
                         </div>
 
-                        <div className="border rounded p-3">
-                            <h6 className="fw-bold mb-2 text-danger">Suspension Temporaire / Définitive</h6>
+                        {/* Timed Suspension Section */}
+                        <div className="p-3 rounded" style={{ backgroundColor: "var(--color-canvas)", border: "1px solid var(--color-border-subtle)" }}>
+                            <h6 className="fw-semibold mb-1 text-danger">Apply Account Suspension</h6>
+                            <p className="text-muted small mb-3">
+                                Immediately terminates active sessions and blocks authentication until the period expires.
+                            </p>
                             <Form onSubmit={handleSuspend}>
                                 <Form.Group className="mb-2">
-                                    <Form.Label className="small">Durée de la suspension</Form.Label>
+                                    <Form.Label className="small text-muted fw-medium">Duration</Form.Label>
                                     <Form.Select
                                         size="sm"
                                         value={duration}
                                         onChange={(e) => setDuration(e.target.value)}
                                     >
-                                        <option value="24h">24 Heures</option>
-                                        <option value="3d">3 Jours</option>
-                                        <option value="7d">7 Jours</option>
-                                        <option value="permanent">Définitive (Permanent)</option>
+                                        <option value="24h">24 Hours</option>
+                                        <option value="3d">3 Days</option>
+                                        <option value="7d">7 Days</option>
+                                        <option value="permanent">Permanent Suspension</option>
                                     </Form.Select>
                                 </Form.Group>
 
                                 <Form.Group className="mb-3">
-                                    <Form.Label className="small">Motif administratif</Form.Label>
+                                    <Form.Label className="small text-muted fw-medium">Administrative Reason (Required)</Form.Label>
                                     <Form.Control
                                         type="text"
                                         size="sm"
-                                        placeholder="Ex: Signalements répétés pour conduite dangereuse..."
+                                        placeholder="e.g. Repeated cancellation without passenger notification..."
                                         required
                                         value={reason}
                                         onChange={(e) => setReason(e.target.value)}
@@ -195,8 +233,9 @@ export default function UserInspectionModal({ show, onHide, user, onUserUpdated 
                                     type="submit"
                                     size="sm"
                                     disabled={actionLoading || !reason.trim()}
+                                    style={{ backgroundColor: "var(--color-danger)", borderColor: "var(--color-danger)" }}
                                 >
-                                    {actionLoading ? "Traitement..." : "Appliquer la Suspension"}
+                                    {actionLoading ? "Processing..." : "Confirm Suspension"}
                                 </Button>
                             </Form>
                         </div>
@@ -204,8 +243,8 @@ export default function UserInspectionModal({ show, onHide, user, onUserUpdated 
                 </Tabs>
             </Modal.Body>
 
-            <Modal.Footer>
-                <Button variant="secondary" onClick={onHide}>Fermer</Button>
+            <Modal.Footer style={{ borderColor: "var(--color-border-subtle)" }}>
+                <Button variant="outline-secondary" size="sm" onClick={onHide}>Close</Button>
             </Modal.Footer>
         </Modal>
     );
