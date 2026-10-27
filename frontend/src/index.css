@@ -276,3 +276,44 @@ button[type="submit"].btn-primary {
   border: 1px solid #e8e4dc !important;
   border-radius: 12px !important;
 }
+
+
+/* ========================================================
+   OUTLINE BUTTON & BADGE PALETTE ENFORCEMENT
+   ======================================================== */
+
+.btn-outline-primary,
+button.btn-outline-primary,
+a.btn-outline-primary {
+  color: #527050 !important;
+  border-color: #527050 !important;
+  background-color: transparent !important;
+  border-radius: 8px !important;
+  font-weight: 500 !important;
+}
+
+.btn-outline-primary:hover,
+.btn-outline-primary:focus,
+.btn-outline-primary:active {
+  background-color: #527050 !important;
+  border-color: #527050 !important;
+  color: #ffffff !important;
+}
+
+.btn-outline-danger,
+button.btn-outline-danger,
+a.btn-outline-danger {
+  color: #b24747 !important;
+  border-color: #b24747 !important;
+  background-color: transparent !important;
+  border-radius: 8px !important;
+  font-weight: 500 !important;
+}
+
+.btn-outline-danger:hover,
+.btn-outline-danger:focus,
+.btn-outline-danger:active {
+  background-color: #b24747 !important;
+  border-color: #b24747 !important;
+  color: #ffffff !important;
+}
