@@ -10,7 +10,7 @@ import TripRouteMap from "../components/TripRouteMap";
 
 function StarRating({ rating }) {
   return (
-    <span className="d-inline-flex align-items-center gap-1" style={{ color: "#946927" }}>
+    <span className="d-inline-flex align-items-center gap-1" style={{ color: "var(--color-warning)" }}>
       {[1, 2, 3, 4, 5].map((star) => (
         <svg
           key={star}
@@ -106,7 +106,7 @@ export default function TripDetails() {
   if (loading) {
     return (
       <Container className="py-5 text-center mt-4">
-        <Spinner animation="border" style={{ color: "#527050" }} />
+        <Spinner animation="border" style={{ color: "var(--color-primary)" }} />
         <p className="mt-2 text-muted small">Loading trip details...</p>
       </Container>
     );
@@ -137,7 +137,7 @@ export default function TripDetails() {
     trip.driver?.avatar_url ||
     (trip.driver?.avatar_path
       ? `${backendBase}/storage/${trip.driver.avatar_path}`
-      : `https://ui-avatars.com/api/?name=${encodeURIComponent(trip.driver?.name || "Driver")}&background=84A282&color=fff`);
+      : `https://ui-avatars.com/api/?name=${encodeURIComponent(trip.driver?.name || "Driver")}&background=e31b6d&color=fff`);
 
   const vehiclePhoto =
     trip.vehicle?.photo_url ||
@@ -172,19 +172,12 @@ export default function TripDetails() {
   const renderStatusBadge = (status) => {
     switch (status) {
       case "scheduled":
-        return (
-          <span
-            className="badge px-2 py-1"
-            style={{ backgroundColor: "#eef4ec", color: "#527050", border: "1px solid #b8cfb3" }}
-          >
-            Scheduled
-          </span>
-        );
+        return <span className="badge badge-sage px-2 py-1">Scheduled</span>;
       case "in_progress":
         return (
           <span
             className="badge px-2 py-1"
-            style={{ backgroundColor: "#fbf6ec", color: "#946927", border: "1px solid rgba(148, 105, 39, 0.2)" }}
+            style={{ backgroundColor: "var(--color-warning-subtle)", color: "var(--color-warning)", border: "1px solid rgba(138, 90, 0, 0.2)" }}
           >
             In Progress
           </span>
@@ -192,21 +185,14 @@ export default function TripDetails() {
       case "completed":
         return <span className="badge bg-light text-dark border px-2 py-1">Completed</span>;
       case "cancelled":
-        return (
-          <span
-            className="badge px-2 py-1"
-            style={{ backgroundColor: "#f6e2e9", color: "#7a3c53", border: "1px solid rgba(122, 60, 83, 0.2)" }}
-          >
-            Cancelled
-          </span>
-        );
+        return <span className="badge badge-blush px-2 py-1">Cancelled</span>;
       default:
         return <span className="badge bg-light text-muted border px-2 py-1">{status}</span>;
     }
   };
 
   return (
-    <Container className="py-4 px-3 px-md-0" style={{ maxWidth: "860px", marginTop: "1rem" }}>
+    <Container className="py-4 px-3 px-md-0" style={{ maxWidth: "860px" }}>
       {/* Top Navigation Row */}
       <div className="d-flex justify-content-between align-items-center mb-4">
         <Button
@@ -215,7 +201,7 @@ export default function TripDetails() {
           variant="outline-secondary"
           size="sm"
           className="d-flex align-items-center gap-1 border px-3"
-          style={{ borderColor: "#e3ded6", color: "#5e6c5f", borderRadius: "8px" }}
+          style={{ borderColor: "var(--color-border)", color: "var(--color-text-muted)" }}
         >
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <line x1="19" y1="12" x2="5" y2="12" />
@@ -228,7 +214,8 @@ export default function TripDetails() {
           <Button
             variant="link"
             size="sm"
-            className="p-0 text-decoration-none small text-danger d-flex align-items-center gap-1"
+            className="p-0 text-decoration-none small d-flex align-items-center gap-1"
+            style={{ color: "var(--color-danger)" }}
             onClick={handleOpenReportTrip}
           >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -241,11 +228,11 @@ export default function TripDetails() {
       </div>
 
       {/* Main Trip Card */}
-      <Card className="shadow-sm border-0 mb-4" style={{ backgroundColor: "#ffffff", borderRadius: "12px", border: "1px solid #e8e4dc" }}>
+      <Card className="shadow-sm border-0 mb-4">
         <Card.Body className="p-4">
-          <div className="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2 border-bottom pb-3" style={{ borderColor: "#f0ece4" }}>
+          <div className="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2 border-bottom pb-3" style={{ borderColor: "var(--color-border-subtle)" }}>
             <div>
-              <h3 className="fw-bold mb-1 text-capitalize" style={{ color: "#1f2720" }}>
+              <h3 className="fw-bold mb-1 text-capitalize">
                 {trip.departure_city}
                 <span className="mx-2 text-muted" style={{ fontWeight: 300 }}>→</span>
                 {trip.destination_city}
@@ -264,7 +251,7 @@ export default function TripDetails() {
               </div>
             </div>
             <div className="text-end">
-              <div className="fs-3 fw-bold mb-1" style={{ color: "#527050" }}>
+              <div className="fs-3 fw-bold mb-1" style={{ color: "var(--color-primary)" }}>
                 {trip.price_per_seat} MAD
               </div>
               <div>{renderStatusBadge(trip.status)}</div>
@@ -277,28 +264,28 @@ export default function TripDetails() {
               <h6 className="fw-semibold text-uppercase text-muted small mb-3">Journey Details</h6>
               {trip.departure_address && (
                 <p className="mb-2 small">
-                  <strong className="text-dark">Pickup Point:</strong> {trip.departure_address}
+                  <strong>Pickup Point:</strong> {trip.departure_address}
                 </p>
               )}
               {trip.destination_address && (
                 <p className="mb-2 small">
-                  <strong className="text-dark">Drop-off Point:</strong> {trip.destination_address}
+                  <strong>Drop-off Point:</strong> {trip.destination_address}
                 </p>
               )}
               <p className="mb-2 small">
-                <strong className="text-dark">Remaining Capacity:</strong>{" "}
+                <strong>Remaining Capacity:</strong>{" "}
                 {trip.available_seats > 0 ? (
-                  <span className="fw-semibold" style={{ color: "#527050" }}>
+                  <span className="fw-semibold" style={{ color: "var(--color-success)" }}>
                     {trip.available_seats} seat{trip.available_seats > 1 ? "s" : ""} left
                   </span>
                 ) : (
-                  <span className="fw-semibold text-danger">Sold Out</span>
+                  <span className="fw-semibold" style={{ color: "var(--color-danger)" }}>Sold Out</span>
                 )}
               </p>
 
               {trip.description && (
-                <div className="mt-3 p-3 rounded" style={{ backgroundColor: "#fefaf3", border: "1px solid #ede9e1" }}>
-                  <div className="fw-medium small text-dark mb-1">Driver Notes</div>
+                <div className="mt-3 p-3 rounded" style={{ backgroundColor: "var(--color-canvas)", border: "1px solid var(--color-border-subtle)" }}>
+                  <div className="fw-medium small mb-1">Driver Notes</div>
                   <div className="small text-muted">{trip.description}</div>
                 </div>
               )}
@@ -312,7 +299,8 @@ export default function TripDetails() {
                   <Button
                     variant="link"
                     size="sm"
-                    className="text-danger p-0 text-decoration-none small"
+                    className="p-0 text-decoration-none small"
+                    style={{ color: "var(--color-danger)" }}
                     onClick={handleOpenReportDriver}
                   >
                     Report Driver
@@ -320,7 +308,7 @@ export default function TripDetails() {
                 )}
               </div>
 
-              <div className="d-flex align-items-center gap-3 p-3 border rounded mb-3" style={{ backgroundColor: "#fefaf3", borderColor: "#ede9e1" }}>
+              <div className="d-flex align-items-center gap-3 p-3 border rounded mb-3" style={{ backgroundColor: "var(--color-canvas)", borderColor: "var(--color-border-subtle)" }}>
                 <Link to={`/users/${trip.driver_id}/profile`}>
                   <Image
                     src={driverAvatar}
@@ -328,7 +316,7 @@ export default function TripDetails() {
                     width={50}
                     height={50}
                     className="object-fit-cover border"
-                    style={{ borderColor: "#e3ded6" }}
+                    style={{ borderColor: "var(--color-border)" }}
                     alt={trip.driver?.name || "Driver"}
                   />
                 </Link>
@@ -343,10 +331,7 @@ export default function TripDetails() {
                   </h6>
                   <div className="d-flex flex-wrap align-items-center gap-2 mb-1">
                     {isDriverVerified ? (
-                      <span
-                        className="badge py-0 px-1"
-                        style={{ backgroundColor: "#eef4ec", color: "#527050", border: "1px solid #b8cfb3", fontSize: "10px" }}
-                      >
+                      <span className="badge badge-sage py-0 px-1" style={{ fontSize: "10px" }}>
                         Verified ID
                       </span>
                     ) : (
@@ -372,10 +357,10 @@ export default function TripDetails() {
               </div>
 
               {trip.vehicle && (
-                <div className="p-3 border rounded" style={{ borderColor: "#ede9e1" }}>
+                <div className="p-3 border rounded" style={{ borderColor: "var(--color-border-subtle)" }}>
                   <div className="d-flex justify-content-between align-items-start mb-2">
                     <div>
-                      <div className="fw-semibold text-dark">
+                      <div className="fw-semibold">
                         {trip.vehicle.brand} {trip.vehicle.model}
                       </div>
                       <div className="small text-muted">
@@ -383,10 +368,7 @@ export default function TripDetails() {
                       </div>
                     </div>
                     {isCarVerified && (
-                      <span
-                        className="badge py-0 px-1"
-                        style={{ backgroundColor: "#f6e2e9", color: "#7a3c53", border: "1px solid rgba(122, 60, 83, 0.2)", fontSize: "10px" }}
-                      >
+                      <span className="badge badge-blush py-0 px-1" style={{ fontSize: "10px" }}>
                         Vehicle Verified
                       </span>
                     )}
@@ -396,8 +378,8 @@ export default function TripDetails() {
                     <Image
                       src={vehiclePhoto}
                       rounded
-                      className="w-100 object-fit-cover mt-2"
-                      style={{ maxHeight: "140px", border: "1px solid #ede9e1" }}
+                      className="w-100 object-fit-cover mt-2 border"
+                      style={{ maxHeight: "140px", borderColor: "var(--color-border-subtle)" }}
                       alt="Vehicle"
                     />
                   )}
@@ -407,15 +389,15 @@ export default function TripDetails() {
           </Row>
 
           {/* Booking Action Bar */}
-          <div className="mt-4 pt-3 border-top" style={{ borderColor: "#f0ece4" }}>
+          <div className="mt-4 pt-3 border-top" style={{ borderColor: "var(--color-border-subtle)" }}>
             {bookingFeedback.message && (
               <Alert
                 dismissible
                 onClose={() => setBookingFeedback({ type: null, message: "" })}
                 style={{
-                  backgroundColor: bookingFeedback.type === "success" ? "#eef4ec" : "#fbeeed",
+                  backgroundColor: bookingFeedback.type === "success" ? "var(--color-success-subtle)" : "var(--color-danger-subtle)",
                   border: "none",
-                  color: bookingFeedback.type === "success" ? "#527050" : "#b24747",
+                  color: bookingFeedback.type === "success" ? "var(--color-success)" : "var(--color-danger)",
                 }}
               >
                 {bookingFeedback.message}
@@ -423,15 +405,15 @@ export default function TripDetails() {
             )}
 
             {isDriver ? (
-              <div className="p-3 rounded small text-muted text-center" style={{ backgroundColor: "#fefaf3", border: "1px solid #ede9e1" }}>
+              <div className="p-3 rounded small text-muted text-center" style={{ backgroundColor: "var(--color-canvas)", border: "1px solid var(--color-border-subtle)" }}>
                 <strong>Driver View:</strong> You published this ride. You cannot reserve seats on your own journey.
               </div>
             ) : !isTripOpen ? (
-              <div className="p-3 rounded small text-center" style={{ backgroundColor: "#fbf6ec", color: "#946927" }}>
+              <div className="p-3 rounded small text-center" style={{ backgroundColor: "var(--color-warning-subtle)", color: "var(--color-warning)" }}>
                 This journey is currently <strong>{trip.status}</strong> and is not open for reservations.
               </div>
             ) : isSoldOut && !booked ? (
-              <div className="p-3 rounded small text-center" style={{ backgroundColor: "#fbeeed", color: "#b24747" }}>
+              <div className="p-3 rounded small text-center" style={{ backgroundColor: "var(--color-danger-subtle)", color: "var(--color-danger)" }}>
                 All available seats for this journey have been reserved.
               </div>
             ) : (
@@ -446,20 +428,14 @@ export default function TripDetails() {
                     value={seats}
                     disabled={booked || submitting}
                     onChange={(e) => setSeats(Math.max(1, Number(e.target.value)))}
-                    style={{ borderRadius: "8px", border: "1px solid #e3ded6" }}
                   />
                 </Col>
                 <Col xs={12} sm={8} md={5}>
                   <Button
                     variant="primary"
-                    className="w-100 py-2 fw-medium text-white"
+                    className="w-100 py-2 fw-medium"
                     onClick={handleBooking}
                     disabled={booked || submitting || seats < 1}
-                    style={{
-                      backgroundColor: "#527050",
-                      borderColor: "#527050",
-                      borderRadius: "8px",
-                    }}
                   >
                     {submitting
                       ? "Submitting..."
@@ -474,7 +450,7 @@ export default function TripDetails() {
         </Card.Body>
       </Card>
 
-      {/* Interactive Driving Route Map */}
+      {/* Interactive Route Map */}
       <TripRouteMap
         departureCity={trip.departure_city}
         destinationCity={trip.destination_city}
@@ -483,9 +459,9 @@ export default function TripDetails() {
       />
 
       {/* Passenger Reviews Section */}
-      <Card className="shadow-sm border-0 mb-4" style={{ backgroundColor: "#ffffff", borderRadius: "12px", border: "1px solid #e8e4dc" }}>
+      <Card className="shadow-sm border-0 mb-4">
         <Card.Body className="p-4">
-          <h5 className="fw-semibold mb-3" style={{ color: "#1f2720" }}>
+          <h5 className="fw-semibold mb-3">
             Passenger Reviews for {trip.driver?.name}
           </h5>
           {driverReviews.length === 0 ? (
@@ -496,9 +472,9 @@ export default function TripDetails() {
                 const isOwnReview = user && Number(user.id) === Number(rev.reviewer_id);
 
                 return (
-                  <div key={rev.id} className="border-bottom pb-3" style={{ borderColor: "#f0ece4" }}>
+                  <div key={rev.id} className="border-bottom pb-3" style={{ borderColor: "var(--color-border-subtle)" }}>
                     <div className="d-flex justify-content-between align-items-center mb-1">
-                      <div className="fw-semibold small" style={{ color: "#1f2720" }}>
+                      <div className="fw-semibold small">
                         {rev.reviewer?.name || "Passenger"}
                       </div>
                       <div className="d-flex align-items-center gap-1 small">

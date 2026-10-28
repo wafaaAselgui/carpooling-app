@@ -7,7 +7,7 @@ export default function AppNavbar() {
   const { user, logoutUser } = useAuth();
 
   return (
-    <Navbar expand="lg" className="app-navbar" style={{ backgroundColor: "#fefaf3", borderBottom: "1px solid #e3ded6" }}>
+    <Navbar expand="lg" className="app-navbar-glass">
       <Container>
         {/* Brand Logo with geometric route icon */}
         <Navbar.Brand as={Link} to="/" className="d-flex align-items-center fw-bold text-dark me-4">
@@ -76,13 +76,13 @@ export default function AppNavbar() {
                     as={Link}
                     to="/admin"
                     className="fw-semibold px-2"
-                    style={{ color: "var(--color-primary)" }}
+                    style={{ color: "var(--color-primary-text)" }}
                   >
                     Admin Console
                   </Nav.Link>
                 )}
 
-                {/* Persistent Notification Bell Component */}
+                {/* Notification Bell Component */}
                 <NotificationBell />
 
                 <Nav.Link as={Link} to="/profile" className="fw-medium">

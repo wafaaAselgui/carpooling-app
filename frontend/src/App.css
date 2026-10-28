@@ -1,43 +1,44 @@
-/* Navigation Brand */
-.brand-mark {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  border-radius: var(--radius-sm);
-  background-color: var(--color-primary);
-  color: #ffffff;
-  margin-right: 8px;
+/* ========================================================
+   Supplementary styles (replaces the previous stylesheet you pasted)
+   Navbar colors, links, brand mark and badges now live in index.css.
+   This file only keeps layout rules, status dots, the active link
+   state and table polish, all using the palette variables.
+   ======================================================== */
+
+/* Navbar layout only (colors, border and shadow come from index.css) */
+/* Navbar layout */
+.app-navbar,
+.app-navbar-glass {
+  position: sticky !important;
+  top: 0 !important;
+  width: 100% !important;
+  z-index: 1050 !important;
+  margin-bottom: 2rem !important;
 }
 
-/* Smooth Navigation bar styling */
-.app-navbar {
-  background-color: rgba(254, 250, 243, 0.92) !important;
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  border-bottom: 1px solid var(--color-border);
+/* Keep the container inside the navbar transparent */
+.app-navbar .container,
+.app-navbar-glass .container,
+.app-navbar .container-fluid,
+.app-navbar-glass .container-fluid {
+  background-color: transparent !important;
 }
 
-.app-navbar .nav-link {
-  color: var(--color-text-muted);
-  font-weight: 500;
-  padding: 0.5rem 0.85rem !important;
-  border-radius: var(--radius-sm);
-  transition: all 0.15s ease;
-}
-
-.app-navbar .nav-link:hover {
-  color: var(--color-primary);
-  background-color: rgba(184, 207, 179, 0.18);
-}
-
-.app-navbar .nav-link.active {
-  color: var(--color-primary);
+/* Active route link (used if a NavLink / .active class is applied) */
+.navbar.app-navbar .navbar-nav .nav-link.active {
+  color: var(--color-primary-text);
   font-weight: 600;
 }
 
-/* Status Indicator Dot */
+/* Base page container clearance */
+main,
+.container,
+.container-fluid {
+  position: relative;
+  z-index: 1;
+}
+
+/* Status indicator dots (each is 3:1+ against the page background) */
 .status-dot {
   display: inline-block;
   width: 8px;
@@ -47,21 +48,22 @@
 }
 
 .status-dot-verified {
-  background-color: var(--color-primary);
+  background-color: var(--color-success-bright);
 }
 
 .status-dot-pending {
-  background-color: var(--color-warning);
+  background-color: var(--color-primary);
 }
 
 .status-dot-unverified {
   background-color: var(--color-text-subtle);
 }
 
-/* Minimal Table Polish */
+/* Minimal table polish */
 .table {
   --bs-table-bg: transparent;
-  --bs-table-striped-bg: rgba(246, 226, 233, 0.15);
+  --bs-table-striped-bg: rgba(255, 158, 187, 0.12);
+  --bs-table-hover-bg: var(--color-surface-tint);
 }
 
 .table th {
@@ -76,29 +78,4 @@
 .table td {
   border-bottom: 1px solid var(--color-border-subtle);
   color: var(--color-text-main);
-}
-
-.app-navbar {
-  position: relative !important;
-  width: 100% !important;
-  background-color: #56684a !important; /* Fully opaque off-white canvas */
-  border-bottom: 1px solid #e3ded6 !important;
-  box-shadow: 0 2px 8px rgba(31, 39, 32, 0.05) !important;
-  z-index: 1050 !important; /* Sits above all card and map layers */
-  margin-bottom: 2rem !important;
-  opacity: 1 !important;
-}
-
-/* Ensure the Bootstrap container inside the navbar does not inherit a clear background */
-.app-navbar .container,
-.app-navbar .container-fluid {
-  background-color: transparent !important;
-}
-
-/* Base page container clearance */
-main,
-.container,
-.container-fluid {
-  position: relative;
-  z-index: 1;
 }

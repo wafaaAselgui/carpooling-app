@@ -15,7 +15,7 @@ function StarRatingInputs({ value, onChange }) {
           type="button"
           className="btn p-1 border-0 bg-transparent"
           onClick={() => onChange(star)}
-          style={{ color: star <= value ? "#946927" : "#e3ded6" }}
+          style={{ color: star <= value ? "var(--color-warning)" : "var(--color-border)" }}
           aria-label={`Rate ${star} star`}
         >
           <svg width="22" height="22" viewBox="0 0 24 24" fill={star <= value ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -124,23 +124,18 @@ export default function DriverTrips() {
   const renderBookingBadge = (status) => {
     switch (status) {
       case "confirmed":
-        return (
-          <span className="badge px-2 py-1" style={{ backgroundColor: "#eef4ec", color: "#527050", border: "1px solid #b8cfb3" }}>
-            Confirmed
-          </span>
-        );
+        return <span className="badge badge-sage px-2 py-1">Confirmed</span>;
       case "pending":
         return (
-          <span className="badge px-2 py-1" style={{ backgroundColor: "#fbf6ec", color: "#946927", border: "1px solid rgba(148, 105, 39, 0.2)" }}>
+          <span
+            className="badge px-2 py-1"
+            style={{ backgroundColor: "var(--color-warning-subtle)", color: "var(--color-warning)", border: "1px solid rgba(138, 90, 0, 0.2)" }}
+          >
             Pending Approval
           </span>
         );
       case "rejected":
-        return (
-          <span className="badge px-2 py-1" style={{ backgroundColor: "#f6e2e9", color: "#7a3c53", border: "1px solid rgba(122, 60, 83, 0.2)" }}>
-            Declined
-          </span>
-        );
+        return <span className="badge badge-blush px-2 py-1">Declined</span>;
       case "cancelled":
         return <span className="badge bg-light text-muted border px-2 py-1">Cancelled</span>;
       default:
@@ -151,25 +146,20 @@ export default function DriverTrips() {
   const renderTripBadge = (status) => {
     switch (status) {
       case "scheduled":
-        return (
-          <span className="badge px-2 py-1" style={{ backgroundColor: "#eef4ec", color: "#527050", border: "1px solid #b8cfb3" }}>
-            Scheduled
-          </span>
-        );
+        return <span className="badge badge-sage px-2 py-1">Scheduled</span>;
       case "in_progress":
         return (
-          <span className="badge px-2 py-1" style={{ backgroundColor: "#fbf6ec", color: "#946927", border: "1px solid rgba(148, 105, 39, 0.2)" }}>
+          <span
+            className="badge px-2 py-1"
+            style={{ backgroundColor: "var(--color-warning-subtle)", color: "var(--color-warning)", border: "1px solid rgba(138, 90, 0, 0.2)" }}
+          >
             In Progress
           </span>
         );
       case "completed":
         return <span className="badge bg-light text-dark border px-2 py-1">Completed</span>;
       case "cancelled":
-        return (
-          <span className="badge px-2 py-1" style={{ backgroundColor: "#f6e2e9", color: "#7a3c53", border: "1px solid rgba(122, 60, 83, 0.2)" }}>
-            Cancelled
-          </span>
-        );
+        return <span className="badge badge-blush px-2 py-1">Cancelled</span>;
       default:
         return <span className="badge bg-light text-muted border px-2 py-1">{status}</span>;
     }
@@ -178,13 +168,13 @@ export default function DriverTrips() {
   const getPassengerAvatar = (passenger) => {
     if (passenger?.avatar_url) return passenger.avatar_url;
     if (passenger?.avatar_path) return `${backendBase}/storage/${passenger.avatar_path}`;
-    return `https://ui-avatars.com/api/?name=${encodeURIComponent(passenger?.name || "Passenger")}&background=84A282&color=fff`;
+    return `https://ui-avatars.com/api/?name=${encodeURIComponent(passenger?.name || "Passenger")}&background=e31b6d&color=fff`;
   };
 
   if (loading) {
     return (
       <Container className="py-5 text-center mt-3">
-        <Spinner animation="border" style={{ color: "#527050" }} />
+        <Spinner animation="border" style={{ color: "var(--color-primary)" }} />
         <p className="mt-2 text-muted small">Loading offered journeys...</p>
       </Container>
     );
@@ -193,7 +183,7 @@ export default function DriverTrips() {
   return (
     <Container className="py-4 px-lg-5" style={{ maxWidth: "1200px" }}>
       <div className="mb-4">
-        <h2 className="fw-bold mb-1" style={{ color: "#1f2720" }}>Driver Schedule</h2>
+        <h2 className="fw-bold mb-1">Driver Schedule</h2>
         <p className="text-muted small mb-0">Manage passenger booking requests, track available capacity, and review completed journeys.</p>
       </div>
 
@@ -201,7 +191,7 @@ export default function DriverTrips() {
         <Alert
           dismissible
           onClose={() => setFeedback(null)}
-          style={{ backgroundColor: "#eef4ec", color: "#527050", border: "none" }}
+          style={{ backgroundColor: "var(--color-success-subtle)", color: "var(--color-success)", border: "none" }}
         >
           {feedback}
         </Alert>
@@ -211,23 +201,17 @@ export default function DriverTrips() {
         <Alert
           dismissible
           onClose={() => setError(null)}
-          style={{ backgroundColor: "#fbeeed", color: "#b24747", border: "none" }}
+          style={{ backgroundColor: "var(--color-danger-subtle)", color: "var(--color-danger)", border: "none" }}
         >
           {error}
         </Alert>
       )}
 
       {trips.length === 0 ? (
-        <Card className="border-0 shadow-sm p-5 text-center bg-white" style={{ borderRadius: "12px", border: "1px solid #e8e4dc" }}>
+        <Card className="border-0 shadow-sm p-5 text-center">
           <p className="text-muted mb-3">You have not published any rides yet.</p>
           <div>
-            <Button
-              as={Link}
-              to="/create-trip"
-              variant="primary"
-              size="sm"
-              style={{ backgroundColor: "#527050", borderColor: "#527050" }}
-            >
+            <Button as={Link} to="/create-trip" variant="primary" size="sm">
               Offer a Ride
             </Button>
           </div>
@@ -237,29 +221,20 @@ export default function DriverTrips() {
           const isCompleted = trip.status === "completed";
 
           return (
-            <Card
-              key={trip.id}
-              className="shadow-sm border-0 mb-4"
-              style={{
-                backgroundColor: "#ffffff",
-                borderRadius: "12px",
-                border: "1px solid #e8e4dc",
-                overflow: "hidden",
-              }}
-            >
+            <Card key={trip.id} className="shadow-sm border-0 mb-4 overflow-hidden">
               <Card.Header
                 className="bg-white py-3 border-bottom d-flex justify-content-between align-items-center flex-wrap gap-2"
-                style={{ borderColor: "#f0ece4" }}
+                style={{ borderColor: "var(--color-border-subtle)" }}
               >
                 <div>
-                  <h5 className="fw-semibold mb-1 text-capitalize text-dark">
+                  <h5 className="fw-semibold mb-1 text-capitalize">
                     {trip.departure_city}
                     <span className="mx-2 text-muted" style={{ fontWeight: 300 }}>→</span>
                     {trip.destination_city}
                   </h5>
                   <div className="text-muted small d-flex align-items-center gap-2 flex-wrap">
                     <span className="d-inline-flex align-items-center gap-1">
-                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-secondary">
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                         <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
                         <line x1="16" y1="2" x2="16" y2="6" />
                         <line x1="8" y1="2" x2="8" y2="6" />
@@ -279,7 +254,7 @@ export default function DriverTrips() {
 
                 <div className="d-flex align-items-center gap-3">
                   <span className="small text-muted">
-                    Capacity: <strong className="text-dark">{trip.available_seats} / {trip.total_seats} seats free</strong>
+                    Capacity: <strong>{trip.available_seats} / {trip.total_seats} seats free</strong>
                   </span>
                   {renderTripBadge(trip.status)}
                 </div>
@@ -292,7 +267,7 @@ export default function DriverTrips() {
                   <p className="text-muted small mb-0">No booking requests submitted for this ride yet.</p>
                 ) : (
                   <Table responsive hover align="middle" className="mb-0 small">
-                    <thead style={{ backgroundColor: "#fefaf3" }}>
+                    <thead>
                       <tr>
                         <th>Passenger</th>
                         <th>Contact Info</th>
@@ -320,23 +295,21 @@ export default function DriverTrips() {
                                     width={34}
                                     height={34}
                                     className="object-fit-cover border"
-                                    style={{ borderColor: "#e3ded6" }}
+                                    style={{ borderColor: "var(--color-border)" }}
                                     alt={passenger?.name || "Passenger"}
                                   />
                                 </Link>
                                 <div>
                                   <Link
                                     to={`/users/${passenger?.id}/profile`}
-                                    className="fw-semibold text-decoration-none text-dark hover-primary"
+                                    className="fw-semibold text-decoration-none hover-primary"
+                                    style={{ color: "var(--color-text-main)" }}
                                   >
                                     {passenger?.name || "Anonymous"}
                                   </Link>
                                   {passenger?.verification_status === "verified" && (
                                     <div className="mt-1">
-                                      <span
-                                        className="badge py-0 px-1"
-                                        style={{ backgroundColor: "#eef4ec", color: "#527050", border: "1px solid #b8cfb3", fontSize: "10px" }}
-                                      >
+                                      <span className="badge badge-sage py-0 px-1" style={{ fontSize: "10px" }}>
                                         Verified ID
                                       </span>
                                     </div>
@@ -354,7 +327,7 @@ export default function DriverTrips() {
                               <strong>{booking.seats}</strong> seat{booking.seats > 1 ? "s" : ""}
                             </td>
                             <td>
-                              <strong style={{ color: "#527050" }}>
+                              <strong style={{ color: "var(--color-primary-text)" }}>
                                 {booking.seats * trip.price_per_seat} MAD
                               </strong>
                             </td>
@@ -370,7 +343,6 @@ export default function DriverTrips() {
                                       trip.available_seats < booking.seats
                                     }
                                     onClick={() => handleBookingResponse(booking.id, "accept")}
-                                    style={{ backgroundColor: "#527050", borderColor: "#527050" }}
                                   >
                                     Accept
                                   </Button>
@@ -379,7 +351,6 @@ export default function DriverTrips() {
                                     variant="outline-danger"
                                     disabled={actionLoading === booking.id}
                                     onClick={() => handleBookingResponse(booking.id, "reject")}
-                                    style={{ borderColor: "#b24747", color: "#b24747" }}
                                   >
                                     Decline
                                   </Button>
@@ -411,17 +382,11 @@ export default function DriverTrips() {
               </Card.Body>
 
               {trip.status === "scheduled" && (
-                <Card.Footer className="bg-white border-top d-flex justify-content-end gap-2 py-3" style={{ borderColor: "#f0ece4" }}>
+                <Card.Footer className="bg-white border-top d-flex justify-content-end gap-2 py-3" style={{ borderColor: "var(--color-border-subtle)" }}>
                   <Button
                     size="sm"
                     variant="outline-primary"
                     onClick={() => handleStatusChange(trip.id, "completed")}
-                    style={{
-                      color: "#527050",
-                      borderColor: "#527050",
-                      borderRadius: "8px",
-                      backgroundColor: "transparent",
-                    }}
                   >
                     Mark Journey Completed
                   </Button>
@@ -429,12 +394,6 @@ export default function DriverTrips() {
                     size="sm"
                     variant="outline-danger"
                     onClick={() => handleStatusChange(trip.id, "cancelled")}
-                    style={{
-                      color: "#b24747",
-                      borderColor: "#b24747",
-                      borderRadius: "8px",
-                      backgroundColor: "transparent",
-                    }}
                   >
                     Cancel Ride
                   </Button>
@@ -447,8 +406,8 @@ export default function DriverTrips() {
 
       {/* Driver -> Passenger Review Modal */}
       <Modal show={showReviewModal} onHide={() => setShowReviewModal(false)} centered>
-        <Modal.Header closeButton style={{ borderColor: "#f0ece4" }}>
-          <Modal.Title className="fs-6 fw-semibold text-dark">
+        <Modal.Header closeButton style={{ borderColor: "var(--color-border-subtle)" }}>
+          <Modal.Title className="fs-6 fw-semibold">
             Rate Passenger: {selectedBooking?.user?.name || "Passenger"}
           </Modal.Title>
         </Modal.Header>
@@ -472,7 +431,7 @@ export default function DriverTrips() {
               />
             </Form.Group>
           </Modal.Body>
-          <Modal.Footer style={{ borderColor: "#f0ece4" }}>
+          <Modal.Footer style={{ borderColor: "var(--color-border-subtle)" }}>
             <Button variant="outline-secondary" size="sm" onClick={() => setShowReviewModal(false)}>
               Cancel
             </Button>
@@ -481,7 +440,6 @@ export default function DriverTrips() {
               size="sm"
               type="submit"
               disabled={submittingReview}
-              style={{ backgroundColor: "#527050", borderColor: "#527050" }}
             >
               {submittingReview ? "Submitting..." : "Submit Feedback"}
             </Button>

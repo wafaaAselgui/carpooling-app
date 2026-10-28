@@ -1,32 +1,64 @@
 :root {
-  /* Brand Palette */
-  --color-canvas: #fefaf3;
-  --color-surface: #ffffff;
-  --color-primary: #527050;
-  --color-primary-hover: #415940;
-  --color-primary-light: #84a282;
-  --color-secondary: #b8cfb3;
-  --color-secondary-subtle: #e6efe4;
-  --color-accent-blush: #f6e2e9;
-  --color-accent-blush-text: #7a3c53;
+  /* ========================================================
+     Brand Palette: "Dragon Fruit"
+     Raw brand colors (use for fills, borders, rings, decoration)
+     ======================================================== */
+  --brand-magenta-bloom: #e31b6d;
+  --brand-tropical-pink: #ff5b94;
+  --brand-exotic-pitaya: #ff9ebb;
+  --brand-flesh-white: #f9f8f4;
+  --brand-speckled-seed: #2d2d2d;
+  --brand-flora-green: #579a32;
 
-  /* Typography & Neutrals */
-  --color-text-main: #1f2720;
-  --color-text-muted: #5e6c5f;
-  --color-text-subtle: #8a968a;
-  --color-border: #e3ded6;
-  --color-border-subtle: #ede9e1;
+  /* ========================================================
+     Semantic tokens (use these in components)
+     Contrast ratios are WCAG 2.x, measured on the stated background.
+     ======================================================== */
 
-  /* Status Colors */
-  --color-danger: #b24747;
-  --color-danger-subtle: #fbeeed;
-  --color-warning: #946927;
-  --color-warning-subtle: #fbf6ec;
+  /* Surfaces */
+  --color-canvas: var(--brand-flesh-white);        /* page background */
+  --color-surface: #ffffff;                        /* cards, inputs */
+  --color-surface-tint: #fff0f5;                   /* soft pitaya wash for hover / highlighted cards */
 
-  /* Elevation */
-  --shadow-sm: 0 1px 3px rgba(31, 39, 32, 0.05);
-  --shadow-md: 0 4px 14px rgba(31, 39, 32, 0.07);
-  --shadow-lg: 0 10px 28px rgba(31, 39, 32, 0.09);
+  /* Primary (Magenta Bloom) */
+  --color-primary: #e31b6d;                        /* white text on it: 4.5:1 (AA) */
+  --color-primary-hover: #b8135a;                  /* white text: 6.4:1 */
+  --color-primary-text: #b8135a;                   /* magenta text/links on canvas: 6.0:1 (the base magenta is only 4.3:1) */
+  --color-primary-light: var(--brand-tropical-pink);
+
+  /* Secondary (Tropical Pink / Exotic Pitaya) */
+  --color-secondary: var(--brand-exotic-pitaya);   /* decoration, borders, progress fills */
+  --color-secondary-subtle: #ffe3ec;               /* tinted backgrounds / badges */
+  --color-accent: var(--brand-tropical-pink);      /* highlights. Pair with charcoal text (4.7:1), never white (2.9:1) */
+  --color-accent-blush: #ffe3ec;
+  --color-accent-blush-text: #8f0e47;              /* on blush: 8:1 */
+
+  /* Success / nature (Flora Green) */
+  --color-success: #3f7523;                        /* white text: 5.5:1; text on canvas: 5.2:1 */
+  --color-success-bright: var(--brand-flora-green);/* fills, icons, borders only */
+  --color-success-subtle: #e8f3df;
+
+  /* Typography & neutrals (Speckled Seed) */
+  --color-text-main: var(--brand-speckled-seed);   /* on canvas: 12:1 */
+  --color-text-muted: #595959;                     /* on canvas: 6.5:1 */
+  --color-text-subtle: #6b6b6b;                    /* on canvas: 5.0:1 */
+  --color-border: #e6e1d9;                         /* decorative dividers, card edges */
+  --color-border-subtle: #eeeae3;
+  --color-border-strong: #8a8a85;                  /* form-control borders: 3:1+ on white (non-text contrast) */
+
+  /* Status colors (red kept distinct from the magenta brand color) */
+  --color-danger: #b3261e;                         /* on white: 6.5:1 */
+  --color-danger-subtle: #fdecea;
+  --color-warning: #8a5a00;                        /* on warning-subtle: 5.7:1 */
+  --color-warning-subtle: #fff6e0;
+
+  /* Focus */
+  --color-focus-ring: rgba(227, 27, 109, 0.28);
+
+  /* Elevation (tinted with charcoal) */
+  --shadow-sm: 0 1px 3px rgba(45, 45, 45, 0.06);
+  --shadow-md: 0 4px 14px rgba(45, 45, 45, 0.08);
+  --shadow-lg: 0 10px 28px rgba(45, 45, 45, 0.1);
 
   /* Radius */
   --radius-sm: 8px;
@@ -37,9 +69,13 @@
   --bs-body-bg: var(--color-canvas);
   --bs-body-color: var(--color-text-main);
   --bs-primary: var(--color-primary);
-  --bs-primary-rgb: 82, 112, 80;
-  --bs-success: var(--color-primary);
-  --bs-success-rgb: 82, 112, 80;
+  --bs-primary-rgb: 227, 27, 109;
+  --bs-success: var(--color-success);
+  --bs-success-rgb: 63, 117, 35;
+  --bs-danger: var(--color-danger);
+  --bs-danger-rgb: 179, 38, 30;
+  --bs-link-color: var(--color-primary-text);
+  --bs-link-hover-color: var(--color-primary-hover);
   --bs-border-color: var(--color-border);
   --bs-card-bg: var(--color-surface);
   --bs-card-border-color: var(--color-border);
@@ -74,31 +110,48 @@ h1, h2, h3, h4, h5, h6 {
   letter-spacing: -0.02em;
 }
 
-/* Links */
+/* Links (darker magenta so small text meets AA) */
 a {
-  color: var(--color-primary);
+  color: var(--color-primary-text);
   text-decoration: none;
   transition: color 0.15s ease;
 }
 
 a:hover {
   color: var(--color-primary-hover);
+  text-decoration: underline;
+}
+
+/* Keyboard focus: always visible */
+:focus-visible {
+  outline: 3px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+/* Text selection */
+::selection {
+  background: var(--brand-exotic-pitaya);
+  color: var(--brand-speckled-seed);
 }
 
 /* Global Card Styling */
 .card {
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
+  background-color: var(--color-surface) !important;
+  border: 1px solid var(--color-border) !important;
+  border-radius: var(--radius-md) !important;
   box-shadow: var(--shadow-sm);
   transition: box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.card:hover {
+  border-color: var(--brand-exotic-pitaya) !important;
 }
 
 /* Global Form Controls */
 .form-control,
 .form-select {
   border-radius: var(--radius-sm);
-  border: 1px solid var(--color-border);
+  border: 1px solid var(--color-border-strong);
   background-color: var(--color-surface);
   color: var(--color-text-main);
   padding: 0.55rem 0.85rem;
@@ -106,15 +159,26 @@ a:hover {
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
+.form-control::placeholder {
+  color: var(--color-text-subtle);
+}
+
 .form-control:focus,
 .form-select:focus {
-  border-color: var(--color-primary-light);
-  box-shadow: 0 0 0 3px rgba(132, 162, 130, 0.25);
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px var(--color-focus-ring);
   background-color: var(--color-surface);
   color: var(--color-text-main);
 }
 
-/* Buttons */
+.form-check-input:checked {
+  background-color: var(--color-primary);
+  border-color: var(--color-primary);
+}
+
+/* ========================================================
+   BUTTONS
+   ======================================================== */
 .btn {
   border-radius: var(--radius-sm);
   font-weight: 500;
@@ -123,10 +187,17 @@ a:hover {
   transition: all 0.15s ease;
 }
 
-.btn-primary {
-  background-color: var(--color-primary);
-  border-color: var(--color-primary);
-  color: #ffffff;
+/* Primary: Magenta Bloom with white text (4.5:1) */
+.btn-primary,
+button.btn-primary,
+a.btn-primary,
+button[type="submit"].btn-primary {
+  background-color: var(--color-primary) !important;
+  border-color: var(--color-primary) !important;
+  color: #ffffff !important;
+  font-weight: 600 !important;
+  border-radius: var(--radius-sm) !important;
+  box-shadow: 0 1px 2px rgba(227, 27, 109, 0.25) !important;
 }
 
 .btn-primary:hover,
@@ -137,20 +208,66 @@ a:hover {
   color: #ffffff !important;
 }
 
-.btn-outline-primary {
-  color: var(--color-primary);
-  border-color: var(--color-primary);
-  background-color: transparent;
+/* Secondary highlight: Tropical Pink with charcoal text (4.7:1) */
+.btn-accent {
+  background-color: var(--color-accent);
+  border: 1px solid var(--color-accent);
+  color: var(--brand-speckled-seed);
+  font-weight: 600;
+}
+
+.btn-accent:hover,
+.btn-accent:focus {
+  background-color: var(--brand-exotic-pitaya);
+  border-color: var(--brand-exotic-pitaya);
+  color: var(--brand-speckled-seed);
+}
+
+/* Outline primary: dark magenta text keeps AA on light surfaces */
+.btn-outline-primary,
+button.btn-outline-primary,
+a.btn-outline-primary {
+  color: var(--color-primary-text) !important;
+  border-color: var(--color-primary) !important;
+  background-color: transparent !important;
+  border-radius: var(--radius-sm) !important;
+  font-weight: 500 !important;
 }
 
 .btn-outline-primary:hover,
-.btn-outline-primary:focus {
-  background-color: var(--color-primary);
-  border-color: var(--color-primary);
-  color: #ffffff;
+.btn-outline-primary:focus,
+.btn-outline-primary:active {
+  background-color: var(--color-primary) !important;
+  border-color: var(--color-primary) !important;
+  color: #ffffff !important;
 }
 
-/* Badges */
+.btn-outline-danger,
+button.btn-outline-danger,
+a.btn-outline-danger {
+  color: var(--color-danger) !important;
+  border-color: var(--color-danger) !important;
+  background-color: transparent !important;
+  border-radius: var(--radius-sm) !important;
+  font-weight: 500 !important;
+}
+
+.btn-outline-danger:hover,
+.btn-outline-danger:focus,
+.btn-outline-danger:active {
+  background-color: var(--color-danger) !important;
+  border-color: var(--color-danger) !important;
+  color: #ffffff !important;
+}
+
+.btn:disabled,
+.btn.disabled {
+  opacity: 0.55;
+}
+
+/* ========================================================
+   BADGES
+   ======================================================== */
 .badge {
   font-weight: 500;
   letter-spacing: 0.02em;
@@ -158,61 +275,37 @@ a:hover {
   border-radius: 9999px;
 }
 
-/* Soft blush badges */
-.badge-blush {
-  background-color: var(--color-accent-blush);
-  color: var(--color-accent-blush-text);
-  border: 1px solid rgba(122, 60, 83, 0.15);
+/* Pink badges (formerly "blush") */
+.badge-blush,
+.app-navbar .badge-blush {
+  background-color: var(--color-accent-blush) !important;
+  color: var(--color-accent-blush-text) !important;
+  border: 1px solid var(--brand-exotic-pitaya) !important;
+  font-weight: 600 !important;
 }
 
-/* Soft sage badges */
-.badge-sage {
-  background-color: var(--color-secondary-subtle);
-  color: var(--color-primary);
-  border: 1px solid var(--color-secondary);
+/* Green badges (formerly "sage"): verified / success / nature */
+.badge-sage,
+.app-navbar .badge-sage {
+  background-color: var(--color-success-subtle) !important;
+  color: var(--color-success) !important;
+  border: 1px solid var(--color-success-bright) !important;
+  font-weight: 600 !important;
 }
-
 
 /* ========================================================
-   DESIGN SYSTEM SPECIFICITY OVERRIDES (Overrides Bootstrap)
+   MISC COMPONENTS
    ======================================================== */
 
-/* Force Primary Brand Action Buttons (Deep Sage) */
-.btn-primary,
-button.btn-primary,
-a.btn-primary {
-  background-color: #527050 !important;
-  border-color: #527050 !important;
-  color: #ffffff !important;
-  font-weight: 500 !important;
-  border-radius: 8px !important;
-  box-shadow: 0 1px 2px rgba(82, 112, 80, 0.15) !important;
-}
-
-.btn-primary:hover,
-.btn-primary:focus,
-.btn-primary:active {
-  background-color: #415940 !important;
-  border-color: #415940 !important;
-  color: #ffffff !important;
-}
-
-/* Range slider custom color */
+/* Range slider */
 input[type="range"]::-webkit-slider-thumb {
-  background: #527050 !important;
+  background: var(--color-primary) !important;
 }
 input[type="range"]::-moz-range-thumb {
-  background: #527050 !important;
+  background: var(--color-primary) !important;
 }
 
-/* Card framing */
-.card {
-  background-color: #ffffff !important;
-  border: 1px solid #e8e4dc !important;
-  border-radius: 12px !important;
-}
-
-/* Slim elegant scrollbar for the feed */
+/* Slim scrollbar for the feed */
 .trip-feed-container::-webkit-scrollbar {
   width: 6px;
 }
@@ -220,100 +313,88 @@ input[type="range"]::-moz-range-thumb {
   background: transparent;
 }
 .trip-feed-container::-webkit-scrollbar-thumb {
-  background: #dcd6cc;
+  background: #d9d3c9;
   border-radius: 10px;
 }
 .trip-feed-container::-webkit-scrollbar-thumb:hover {
-  background: #b8cfb3;
+  background: var(--brand-exotic-pitaya);
+}
+
+/* Respect users who prefer less motion */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+    animation: none !important;
+  }
 }
 
 
 /* ========================================================
-   GLOBAL FIXES: PALETTE BUTTONS & BADGE VISIBILITY
+   GLASSMORPHISM STYLES (Dragon Fruit)
    ======================================================== */
 
-/* Fix primary action button color (Deep Sage) */
-.btn-primary,
-button.btn-primary,
-a.btn-primary,
-button[type="submit"].btn-primary {
-  background-color: #527050 !important;
-  border-color: #527050 !important;
-  color: #ffffff !important;
-  font-weight: 500 !important;
-  border-radius: 8px !important;
-  box-shadow: 0 1px 2px rgba(82, 112, 80, 0.15) !important;
+:root {
+  /* Glass Surface Tokens */
+  --glass-bg: rgba(249, 248, 244, 0.78); /* Semi-transparent Flesh White */
+  --glass-bg-card: rgba(255, 255, 255, 0.82);
+  --glass-border: rgba(230, 225, 217, 0.65);
+  --glass-blur: blur(14px);
+  --glass-shadow: 0 8px 32px 0 rgba(45, 45, 45, 0.08);
 }
 
-.btn-primary:hover,
-.btn-primary:focus,
-.btn-primary:active {
-  background-color: #415940 !important;
-  border-color: #415940 !important;
-  color: #ffffff !important;
+/* Glass Navbar */
+.app-navbar-glass {
+  position: sticky !important;
+  top: 0 !important;
+  width: 100% !important;
+  background: var(--glass-bg) !important;
+  backdrop-filter: var(--glass-blur) !important;
+  -webkit-backdrop-filter: var(--glass-blur) !important;
+  border-bottom: 1px solid var(--glass-border) !important;
+  box-shadow: 0 4px 20px rgba(45, 45, 45, 0.04) !important;
+  z-index: 1050 !important;
+  margin-bottom: 2rem !important;
 }
 
-/* Ensure navbar verified badge is clearly readable */
-.app-navbar .badge-sage,
-.badge-sage {
-  background-color: #eef4ec !important;
-  color: #527050 !important;
-  border: 1px solid #b8cfb3 !important;
-  font-weight: 600 !important;
+/* Glass Notification Bell Dropdown */
+.glass-dropdown-menu,
+.dropdown-menu.show {
+  background: var(--glass-bg-card) !important;
+  backdrop-filter: var(--glass-blur) !important;
+  -webkit-backdrop-filter: var(--glass-blur) !important;
+  border: 1px solid var(--glass-border) !important;
+  border-radius: var(--radius-md) !important;
+  box-shadow: var(--glass-shadow) !important;
+  overflow: hidden;
 }
 
-.app-navbar .badge-blush,
-.badge-blush {
-  background-color: #f6e2e9 !important;
-  color: #7a3c53 !important;
-  border: 1px solid rgba(122, 60, 83, 0.2) !important;
-  font-weight: 600 !important;
+/* Glass Modals (Report, Review, Inspection) */
+.modal-content {
+  background: var(--glass-bg-card) !important;
+  backdrop-filter: var(--glass-blur) !important;
+  -webkit-backdrop-filter: var(--glass-blur) !important;
+  border: 1px solid var(--glass-border) !important;
+  border-radius: var(--radius-md) !important;
+  box-shadow: var(--glass-shadow) !important;
 }
 
-/* Card border consistency */
-.card {
-  background-color: #ffffff !important;
-  border: 1px solid #e8e4dc !important;
-  border-radius: 12px !important;
+.modal-header,
+.modal-footer {
+  border-color: var(--color-border-subtle) !important;
+  background: transparent !important;
 }
 
-
-/* ========================================================
-   OUTLINE BUTTON & BADGE PALETTE ENFORCEMENT
-   ======================================================== */
-
-.btn-outline-primary,
-button.btn-outline-primary,
-a.btn-outline-primary {
-  color: #527050 !important;
-  border-color: #527050 !important;
-  background-color: transparent !important;
-  border-radius: 8px !important;
-  font-weight: 500 !important;
+/* Glass Map Popups (Leaflet) */
+.leaflet-popup-content-wrapper {
+  background: var(--glass-bg-card) !important;
+  backdrop-filter: var(--glass-blur) !important;
+  -webkit-backdrop-filter: var(--glass-blur) !important;
+  border: 1px solid var(--glass-border) !important;
+  border-radius: var(--radius-sm) !important;
+  box-shadow: var(--glass-shadow) !important;
+  color: var(--color-text-main) !important;
 }
 
-.btn-outline-primary:hover,
-.btn-outline-primary:focus,
-.btn-outline-primary:active {
-  background-color: #527050 !important;
-  border-color: #527050 !important;
-  color: #ffffff !important;
-}
-
-.btn-outline-danger,
-button.btn-outline-danger,
-a.btn-outline-danger {
-  color: #b24747 !important;
-  border-color: #b24747 !important;
-  background-color: transparent !important;
-  border-radius: 8px !important;
-  font-weight: 500 !important;
-}
-
-.btn-outline-danger:hover,
-.btn-outline-danger:focus,
-.btn-outline-danger:active {
-  background-color: #b24747 !important;
-  border-color: #b24747 !important;
-  color: #ffffff !important;
+.leaflet-popup-tip {
+  background: var(--glass-bg-card) !important;
 }

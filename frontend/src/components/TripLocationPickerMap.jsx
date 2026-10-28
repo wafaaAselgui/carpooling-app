@@ -6,7 +6,6 @@ import { fetchDrivingRoute, getDistanceKm, reverseGeocode } from "../utils/geoUt
 
 import markerShadow from "leaflet/dist/images/marker-shadow.png";
 
-// Custom clean map icons
 const departureIcon = new L.Icon({
   iconUrl: "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png",
   shadowUrl: markerShadow,
@@ -118,26 +117,23 @@ export default function TripLocationPickerMap({
   const defaultCenter = depCoords || destCoords || [33.5731, -7.5898];
 
   return (
-    <div
-      className="card shadow-sm border-0 h-100 overflow-hidden"
-      style={{ backgroundColor: "#ffffff", borderRadius: "12px", border: "1px solid #e8e4dc" }}
-    >
+    <div className="card shadow-sm border-0 h-100 overflow-hidden">
       {/* Top Header with Segmented Buttons */}
       <div
         className="px-3 py-2 d-flex flex-wrap justify-content-between align-items-center gap-2 border-bottom"
-        style={{ backgroundColor: "#ffffff", borderColor: "#f0ece4" }}
+        style={{ borderColor: "var(--color-border-subtle)" }}
       >
         <div
           className="d-inline-flex p-1 rounded-3 border"
-          style={{ backgroundColor: "#fefaf3", borderColor: "#ede9e1" }}
+          style={{ backgroundColor: "var(--color-canvas)", borderColor: "var(--color-border)" }}
         >
           <button
             type="button"
             className="btn btn-sm d-flex align-items-center gap-2 border-0 px-3 py-1 fw-medium"
             style={{
-              backgroundColor: activeTarget === "departure" ? "#527050" : "transparent",
-              color: activeTarget === "departure" ? "#ffffff" : "#5e6c5f",
-              borderRadius: "6px",
+              backgroundColor: activeTarget === "departure" ? "var(--color-primary)" : "transparent",
+              color: activeTarget === "departure" ? "#ffffff" : "var(--color-text-muted)",
+              borderRadius: "var(--radius-sm)",
               transition: "all 0.15s ease",
             }}
             onClick={() => setActiveTarget("departure")}
@@ -147,7 +143,7 @@ export default function TripLocationPickerMap({
                 width: 7,
                 height: 7,
                 borderRadius: "50%",
-                backgroundColor: activeTarget === "departure" ? "#ffffff" : "#527050",
+                backgroundColor: activeTarget === "departure" ? "#ffffff" : "var(--color-primary)",
               }}
             />
             Set Departure {activeTarget === "departure" && "(Active)"}
@@ -157,9 +153,9 @@ export default function TripLocationPickerMap({
             type="button"
             className="btn btn-sm d-flex align-items-center gap-2 border-0 px-3 py-1 fw-medium"
             style={{
-              backgroundColor: activeTarget === "destination" ? "#b24747" : "transparent",
-              color: activeTarget === "destination" ? "#ffffff" : "#5e6c5f",
-              borderRadius: "6px",
+              backgroundColor: activeTarget === "destination" ? "var(--color-danger)" : "transparent",
+              color: activeTarget === "destination" ? "#ffffff" : "var(--color-text-muted)",
+              borderRadius: "var(--radius-sm)",
               transition: "all 0.15s ease",
             }}
             onClick={() => setActiveTarget("destination")}
@@ -169,7 +165,7 @@ export default function TripLocationPickerMap({
                 width: 7,
                 height: 7,
                 borderRadius: "50%",
-                backgroundColor: activeTarget === "destination" ? "#ffffff" : "#b24747",
+                backgroundColor: activeTarget === "destination" ? "#ffffff" : "var(--color-danger)",
               }}
             />
             Set Destination {activeTarget === "destination" && "(Active)"}
@@ -179,10 +175,7 @@ export default function TripLocationPickerMap({
         <div className="d-flex align-items-center gap-2">
           {geocoding && <span className="small text-muted">Resolving location...</span>}
           {distanceKm && (
-            <span
-              className="badge px-2 py-1"
-              style={{ backgroundColor: "#eef4ec", color: "#527050", border: "1px solid #b8cfb3" }}
-            >
+            <span className="badge badge-sage px-2 py-1">
               ~{distanceKm} km direct
             </span>
           )}
@@ -244,7 +237,7 @@ export default function TripLocationPickerMap({
           {routePolyline.length > 0 && (
             <Polyline
               positions={routePolyline}
-              pathOptions={{ color: "#527050", weight: 5, opacity: 0.85 }}
+              pathOptions={{ color: "#e31b6d", weight: 5, opacity: 0.85 }}
             />
           )}
         </MapContainer>
@@ -252,7 +245,7 @@ export default function TripLocationPickerMap({
 
       <div
         className="card-footer py-2 text-muted small text-center border-top"
-        style={{ backgroundColor: "#fefaf3", borderColor: "#f0ece4" }}
+        style={{ backgroundColor: "var(--color-canvas)", borderColor: "var(--color-border-subtle)" }}
       >
         Click directly on the map to place pins, or drag existing markers to adjust.
       </div>

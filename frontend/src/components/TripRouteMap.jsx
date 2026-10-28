@@ -7,7 +7,6 @@ import { fetchDrivingRoute, getDistanceKm } from "../utils/geoUtils";
 
 import markerShadow from "leaflet/dist/images/marker-shadow.png";
 
-// Green marker for departure
 const departureIcon = new L.Icon({
   iconUrl: "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png",
   shadowUrl: markerShadow,
@@ -17,7 +16,6 @@ const departureIcon = new L.Icon({
   shadowSize: [41, 41],
 });
 
-// Red marker for arrival
 const destinationIcon = new L.Icon({
   iconUrl: "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png",
   shadowUrl: markerShadow,
@@ -90,8 +88,8 @@ export default function TripRouteMap({
 
   if (loadingMap) {
     return (
-      <div className="card shadow-sm border-0 mb-4 p-4 text-center text-muted bg-white" style={{ borderRadius: "12px", border: "1px solid #e8e4dc" }}>
-        <div className="spinner-border spinner-border-sm me-2" role="status" style={{ color: "#527050" }} />
+      <div className="card shadow-sm border-0 mb-4 p-4 text-center text-muted">
+        <div className="spinner-border spinner-border-sm me-2" role="status" style={{ color: "var(--color-primary)" }} />
         <span className="small">Loading itinerary map...</span>
       </div>
     );
@@ -104,13 +102,10 @@ export default function TripRouteMap({
   const bounds = L.latLngBounds([depCoords, destCoords]);
 
   return (
-    <div
-      className="card shadow-sm border-0 mb-4 overflow-hidden"
-      style={{ backgroundColor: "#ffffff", borderRadius: "12px", border: "1px solid #e8e4dc" }}
-    >
-      <div className="card-header bg-white py-3 d-flex justify-content-between align-items-center border-bottom" style={{ borderColor: "#f0ece4" }}>
-        <div className="fw-semibold text-dark small d-flex align-items-center gap-2">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: "#527050" }}>
+    <div className="card shadow-sm border-0 mb-4 overflow-hidden">
+      <div className="card-header bg-white py-3 d-flex justify-content-between align-items-center border-bottom" style={{ borderColor: "var(--color-border-subtle)" }}>
+        <div className="fw-semibold small d-flex align-items-center gap-2">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: "var(--color-primary)" }}>
             <circle cx="6" cy="19" r="3" />
             <path d="M9 19h8.5a3.5 3.5 0 0 0 0-7h-11a3.5 3.5 0 0 1 0-7H15" />
             <circle cx="18" cy="5" r="3" />
@@ -120,10 +115,7 @@ export default function TripRouteMap({
           </span>
         </div>
         {distanceKm && (
-          <span
-            className="badge px-2 py-1"
-            style={{ backgroundColor: "#eef4ec", color: "#527050", border: "1px solid #b8cfb3" }}
-          >
+          <span className="badge badge-sage px-2 py-1">
             ~{distanceKm} km direct distance
           </span>
         )}
@@ -160,7 +152,7 @@ export default function TripRouteMap({
           {routePolyline && routePolyline.length > 0 && (
             <Polyline
               positions={routePolyline}
-              pathOptions={{ color: "#527050", weight: 5, opacity: 0.85 }}
+              pathOptions={{ color: "#e31b6d", weight: 5, opacity: 0.85 }}
             />
           )}
         </MapContainer>
