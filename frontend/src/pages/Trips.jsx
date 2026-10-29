@@ -344,9 +344,8 @@ export default function Trips() {
             <Col xs={12} md={3} className="d-flex justify-content-md-end">
               <button
                 type="button"
-                className="btn btn-sm btn-outline-secondary w-100 w-md-auto px-3"
+                className="btn btn-sm btn-outline-orange w-100 w-md-auto px-3"
                 onClick={() => setFilters({ date: "", seats: "", max_price: "" })}
-                style={{ borderColor: "var(--color-border)", color: "var(--color-text-muted)" }}
               >
                 Clear Filters
               </button>

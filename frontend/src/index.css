@@ -410,3 +410,19 @@ input[type="range"]::-moz-range-thumb {
 .leaflet-popup-tip {
   background: var(--glass-bg-card) !important;
 }
+
+/* Orange outline button (secondary actions) */
+.btn-outline-orange {
+  color: #4d2202;                 /* on white: 5.0:1 (AA). Pure #f77f00 text is only 2.5:1 */
+  border: 1px solid #f77f00;
+  background-color: #f29e00;
+  font-weight: 500;
+}
+
+.btn-outline-orange:hover,
+.btn-outline-orange:focus,
+.btn-outline-orange:active {
+  background-color: #f77f00;
+  border-color: #f77f00;
+  color: var(--brand-navy);       /* 6.3:1 */
+}
