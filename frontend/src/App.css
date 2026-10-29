@@ -1,12 +1,11 @@
 /* ========================================================
-   Supplementary styles (replaces the previous stylesheet you pasted)
-   Navbar colors, links, brand mark and badges now live in index.css.
+   Supplementary styles
+   Navbar colors, links, brand mark and badges live in index.css.
    This file only keeps layout rules, status dots, the active link
    state and table polish, all using the palette variables.
    ======================================================== */
 
 /* Navbar layout only (colors, border and shadow come from index.css) */
-/* Navbar layout */
 .app-navbar,
 .app-navbar-glass {
   position: sticky !important;
@@ -48,11 +47,11 @@ main,
 }
 
 .status-dot-verified {
-  background-color: var(--color-success-bright);
+  background-color: var(--color-success);
 }
 
 .status-dot-pending {
-  background-color: var(--color-primary);
+  background-color: var(--color-warning-dot);
 }
 
 .status-dot-unverified {
@@ -62,7 +61,7 @@ main,
 /* Minimal table polish */
 .table {
   --bs-table-bg: transparent;
-  --bs-table-striped-bg: rgba(255, 158, 187, 0.12);
+  --bs-table-striped-bg: rgba(15, 157, 138, 0.07);
   --bs-table-hover-bg: var(--color-surface-tint);
 }
 
