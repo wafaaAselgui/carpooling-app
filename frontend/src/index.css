@@ -422,7 +422,7 @@ input[type="range"]::-moz-range-thumb {
 .btn-outline-orange:hover,
 .btn-outline-orange:focus,
 .btn-outline-orange:active {
-  background-color: #f77f00;
+  background-color: #f29e00;
   border-color: #f77f00;
   color: var(--brand-navy);       /* 6.3:1 */
 }
