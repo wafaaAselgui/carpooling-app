@@ -5,24 +5,8 @@ import "leaflet/dist/leaflet.css";
 import { fetchDrivingRoute, getDistanceKm, reverseGeocode } from "../utils/geoUtils";
 
 import markerShadow from "leaflet/dist/images/marker-shadow.png";
+import { departureIcon, destinationIcon } from "../utils/mapIcons";
 
-const departureIcon = new L.Icon({
-  iconUrl: "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png",
-  shadowUrl: markerShadow,
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-  popupAnchor: [1, -34],
-  shadowSize: [41, 41],
-});
-
-const destinationIcon = new L.Icon({
-  iconUrl: "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png",
-  shadowUrl: markerShadow,
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-  popupAnchor: [1, -34],
-  shadowSize: [41, 41],
-});
 
 function MapClickHandler({ activeTarget, onLocationSelected }) {
   useMapEvents({

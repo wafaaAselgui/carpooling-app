@@ -61,7 +61,7 @@
   --color-warning-dot: #b87400;                    /* pending dots: 3.6:1 on canvas */
 
   /* Focus */
-  --color-focus-ring: rgba(11, 127, 112, 0.3);
+  --color-focus-ring: #0b7f70;
 
   /* Elevation (tinted with navy) */
   --shadow-sm: 0 1px 3px rgba(20, 33, 61, 0.06);
@@ -425,4 +425,10 @@ input[type="range"]::-moz-range-thumb {
   background-color: #f29e00;
   border-color: #f77f00;
   color: var(--brand-navy);       /* 6.3:1 */
+}
+
+/* Remove default Leaflet divIcon square container */
+.leaflet-div-icon {
+  background: transparent !important;
+  border: none !important;
 }
