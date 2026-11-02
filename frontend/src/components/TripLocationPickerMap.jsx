@@ -1,23 +1,9 @@
-import React, { useEffect, useMemo, useState } from "react";
-import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap, useMapEvents } from "react-leaflet";
+import React, { useEffect, useState } from "react";
+import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import { fetchDrivingRoute, getDistanceKm, reverseGeocode } from "../utils/geoUtils";
-
-import markerShadow from "leaflet/dist/images/marker-shadow.png";
+import { fetchDrivingRoute, getDistanceKm } from "../utils/geoUtils";
 import { departureIcon, destinationIcon } from "../utils/mapIcons";
-
-
-function MapClickHandler({ activeTarget, onLocationSelected }) {
-  useMapEvents({
-    click(e) {
-      if (!activeTarget) return;
-      const { lat, lng } = e.latlng;
-      onLocationSelected(activeTarget, [lat, lng]);
-    },
-  });
-  return null;
-}
 
 function AutoFitBounds({ depCoords, destCoords }) {
   const map = useMap();
@@ -37,23 +23,28 @@ function AutoFitBounds({ depCoords, destCoords }) {
 export default function TripLocationPickerMap({
   depCoords,
   destCoords,
-  onCoordsChange,
   departureCity,
   destinationCity,
+  departureAddress,
+  destinationAddress,
 }) {
-  const [activeTarget, setActiveTarget] = useState("departure");
   const [routePolyline, setRoutePolyline] = useState([]);
   const [distanceKm, setDistanceKm] = useState(null);
-  const [geocoding, setGeocoding] = useState(false);
+  const [loadingRoute, setLoadingRoute] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
     async function updateRoute() {
       if (depCoords && destCoords) {
-        const polyline = await fetchDrivingRoute(depCoords, destCoords);
-        if (isMounted) {
-          setRoutePolyline(polyline);
-          setDistanceKm(Math.round(getDistanceKm(depCoords, destCoords)));
+        setLoadingRoute(true);
+        try {
+          const polyline = await fetchDrivingRoute(depCoords, destCoords);
+          if (isMounted) {
+            setRoutePolyline(polyline);
+            setDistanceKm(Math.round(getDistanceKm(depCoords, destCoords)));
+          }
+        } finally {
+          if (isMounted) setLoadingRoute(false);
         }
       } else {
         setRoutePolyline([]);
@@ -66,112 +57,47 @@ export default function TripLocationPickerMap({
     };
   }, [depCoords, destCoords]);
 
-  const handlePinSelected = async (target, coords) => {
-    setGeocoding(true);
-    try {
-      const rawAddress = await reverseGeocode(coords[0], coords[1]);
-      onCoordsChange(target, coords, rawAddress);
-    } finally {
-      setGeocoding(false);
-    }
-  };
-
-  const depMarkerHandlers = useMemo(
-    () => ({
-      dragend(e) {
-        const marker = e.target;
-        const { lat, lng } = marker.getLatLng();
-        handlePinSelected("departure", [lat, lng]);
-      },
-    }),
-    []
-  );
-
-  const destMarkerHandlers = useMemo(
-    () => ({
-      dragend(e) {
-        const marker = e.target;
-        const { lat, lng } = marker.getLatLng();
-        handlePinSelected("destination", [lat, lng]);
-      },
-    }),
-    []
-  );
-
   const defaultCenter = depCoords || destCoords || [33.5731, -7.5898];
 
   return (
     <div className="card shadow-sm border-0 h-100 overflow-hidden">
-      {/* Top Header with Segmented Buttons */}
+      {/* Top Header info bar */}
       <div
-        className="px-3 py-2 d-flex flex-wrap justify-content-between align-items-center gap-2 border-bottom"
+        className="px-3 py-2 d-flex justify-content-between align-items-center border-bottom"
         style={{ borderColor: "var(--color-border-subtle)" }}
       >
-        <div
-          className="d-inline-flex p-1 rounded-3 border"
-          style={{ backgroundColor: "var(--color-canvas)", borderColor: "var(--color-border)" }}
-        >
-          <button
-            type="button"
-            className="btn btn-sm d-flex align-items-center gap-2 border-0 px-3 py-1 fw-medium"
-            style={{
-              backgroundColor: activeTarget === "departure" ? "var(--color-primary)" : "transparent",
-              color: activeTarget === "departure" ? "#ffffff" : "var(--color-text-muted)",
-              borderRadius: "var(--radius-sm)",
-              transition: "all 0.15s ease",
-            }}
-            onClick={() => setActiveTarget("departure")}
-          >
-            <span
-              style={{
-                width: 7,
-                height: 7,
-                borderRadius: "50%",
-                backgroundColor: activeTarget === "departure" ? "#ffffff" : "var(--color-primary)",
-              }}
-            />
-            Set Departure {activeTarget === "departure" && "(Active)"}
-          </button>
-
-          <button
-            type="button"
-            className="btn btn-sm d-flex align-items-center gap-2 border-0 px-3 py-1 fw-medium"
-            style={{
-              backgroundColor: activeTarget === "destination" ? "var(--color-danger)" : "transparent",
-              color: activeTarget === "destination" ? "#ffffff" : "var(--color-text-muted)",
-              borderRadius: "var(--radius-sm)",
-              transition: "all 0.15s ease",
-            }}
-            onClick={() => setActiveTarget("destination")}
-          >
-            <span
-              style={{
-                width: 7,
-                height: 7,
-                borderRadius: "50%",
-                backgroundColor: activeTarget === "destination" ? "#ffffff" : "var(--color-danger)",
-              }}
-            />
-            Set Destination {activeTarget === "destination" && "(Active)"}
-          </button>
+        <div className="fw-semibold small d-flex align-items-center gap-2">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: "var(--color-primary)" }}>
+            <circle cx="6" cy="19" r="3" />
+            <path d="M9 19h8.5a3.5 3.5 0 0 0 0-7h-11a3.5 3.5 0 0 1 0-7H15" />
+            <circle cx="18" cy="5" r="3" />
+          </svg>
+          <span>
+            {departureCity && destinationCity ? (
+              <span><strong>{departureCity}</strong> ➔ <strong>{destinationCity}</strong></span>
+            ) : (
+              <span className="text-muted">Route Preview (Select cities on the left)</span>
+            )}
+          </span>
         </div>
 
-        <div className="d-flex align-items-center gap-2">
-          {geocoding && <span className="small text-muted">Resolving location...</span>}
-          {distanceKm && (
+        <div>
+          {loadingRoute ? (
+            <span className="small text-muted">Calculating path...</span>
+          ) : distanceKm ? (
             <span className="badge badge-sage px-2 py-1">
               ~{distanceKm} km direct
             </span>
-          )}
+          ) : null}
         </div>
       </div>
 
       {/* Map Body */}
-      <div style={{ height: "460px", width: "100%", position: "relative" }}>
+      <div style={{ height: "480px", width: "100%", position: "relative" }}>
         <MapContainer
           center={defaultCenter}
           zoom={6}
-          scrollWheelZoom={true}
+          scrollWheelZoom={false}
           style={{ height: "100%", width: "100%" }}
         >
           <TileLayer
@@ -179,41 +105,22 @@ export default function TripLocationPickerMap({
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           />
 
-          <MapClickHandler
-            activeTarget={activeTarget}
-            onLocationSelected={handlePinSelected}
-          />
-
           <AutoFitBounds depCoords={depCoords} destCoords={destCoords} />
 
           {depCoords && (
-            <Marker
-              position={depCoords}
-              icon={departureIcon}
-              draggable={true}
-              eventHandlers={depMarkerHandlers}
-            >
+            <Marker position={depCoords} icon={departureIcon}>
               <Popup>
-                <strong>Departure</strong>
-                <br />
-                {departureCity || "Selected pickup point"}
-                <div className="small text-muted">(Drag to adjust)</div>
+                <strong>Departure: {departureCity}</strong>
+                {departureAddress && <div className="small text-muted">{departureAddress}</div>}
               </Popup>
             </Marker>
           )}
 
           {destCoords && (
-            <Marker
-              position={destCoords}
-              icon={destinationIcon}
-              draggable={true}
-              eventHandlers={destMarkerHandlers}
-            >
+            <Marker position={destCoords} icon={destinationIcon}>
               <Popup>
-                <strong>Destination</strong>
-                <br />
-                {destinationCity || "Selected drop-off point"}
-                <div className="small text-muted">(Drag to adjust)</div>
+                <strong>Destination: {destinationCity}</strong>
+                {destinationAddress && <div className="small text-muted">{destinationAddress}</div>}
               </Popup>
             </Marker>
           )}
@@ -221,7 +128,7 @@ export default function TripLocationPickerMap({
           {routePolyline.length > 0 && (
             <Polyline
               positions={routePolyline}
-              pathOptions={{ color: "#e31b6d", weight: 5, opacity: 0.85 }}
+              pathOptions={{ color: "var(--color-primary)", weight: 5, opacity: 0.85 }}
             />
           )}
         </MapContainer>
@@ -231,7 +138,7 @@ export default function TripLocationPickerMap({
         className="card-footer py-2 text-muted small text-center border-top"
         style={{ backgroundColor: "var(--color-canvas)", borderColor: "var(--color-border-subtle)" }}
       >
-        Click directly on the map to place pins, or drag existing markers to adjust.
+        Route is automatically previewed once both departure and destination cities are chosen.
       </div>
     </div>
   );

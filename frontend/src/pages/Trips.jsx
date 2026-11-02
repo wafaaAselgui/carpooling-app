@@ -1,34 +1,14 @@
 import { useEffect, useState, useMemo } from "react";
 import { Container, Row, Col, Form, Card, Alert, Spinner } from "react-bootstrap";
-import { MapContainer, TileLayer, Marker, Popup, Polyline, Circle, useMapEvents } from "react-leaflet";
+import { MapContainer, TileLayer, Marker, Popup, Polyline } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 
 import TripCard from "../components/TripCard";
 import { getTrips } from "../services/trip";
-import { findPlaceCoords } from "../data/moroccoPlaces";
-import { fetchDrivingRoute, isRouteCompatible, reverseGeocode } from "../utils/geoUtils";
-
-import markerShadow from "leaflet/dist/images/marker-shadow.png";
-
-// Custom clean map icons
-const greenIcon = new L.Icon({
-  iconUrl: "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png",
-  shadowUrl: markerShadow,
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-  popupAnchor: [1, -34],
-  shadowSize: [41, 41],
-});
-
-const redIcon = new L.Icon({
-  iconUrl: "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png",
-  shadowUrl: markerShadow,
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-  popupAnchor: [1, -34],
-  shadowSize: [41, 41],
-});
+import { MOROCCO_PLACES, findPlaceCoords } from "../data/moroccoPlaces";
+import { fetchDrivingRoute, isRouteCompatible } from "../utils/geoUtils";
+import { departureIcon, destinationIcon } from "../utils/mapIcons";
 
 const dynamicCoordsCache = new Map();
 
@@ -61,26 +41,14 @@ async function getOrFetchCoords(cityName) {
   return null;
 }
 
-function MapClickHandler({ pickMode, onLocationSelected }) {
-  useMapEvents({
-    async click(e) {
-      const { lat, lng } = e.latlng;
-      const placeName = await reverseGeocode(lat, lng);
-      onLocationSelected([lat, lng], placeName);
-    },
-  });
-  return null;
-}
-
 export default function Trips() {
   const [tripsWithRoutes, setTripsWithRoutes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [activeTripId, setActiveTripId] = useState(null);
 
-  const [pickMode, setPickMode] = useState("dep");
-  const [customDep, setCustomDep] = useState(null);
-  const [customDest, setCustomDest] = useState(null);
+  const [selectedDepCity, setSelectedDepCity] = useState("");
+  const [selectedDestCity, setSelectedDestCity] = useState("");
   const [userRouteGeometry, setUserRouteGeometry] = useState(null);
 
   const [filters, setFilters] = useState({
@@ -88,6 +56,18 @@ export default function Trips() {
     seats: "",
     max_price: "",
   });
+
+  const groupedPlaces = useMemo(() => {
+    return MOROCCO_PLACES.reduce((acc, place) => {
+      const region = place.region || "Other";
+      if (!acc[region]) acc[region] = [];
+      acc[region].push(place);
+      return acc;
+    }, {});
+  }, []);
+
+  const depCoords = useMemo(() => findPlaceCoords(selectedDepCity), [selectedDepCity]);
+  const destCoords = useMemo(() => findPlaceCoords(selectedDestCity), [selectedDestCity]);
 
   useEffect(() => {
     setLoading(true);
@@ -118,49 +98,38 @@ export default function Trips() {
   }, []);
 
   useEffect(() => {
-    if (customDep && customDest) {
-      fetchDrivingRoute(customDep.coords, customDest.coords).then((route) => {
+    if (depCoords && destCoords) {
+      fetchDrivingRoute(depCoords, destCoords).then((route) => {
         setUserRouteGeometry(route);
       });
     } else {
       setUserRouteGeometry(null);
     }
-  }, [customDep, customDest]);
-
-  const handleLocationSelected = (coords, name) => {
-    if (pickMode === "dep") {
-      setCustomDep({ coords, name });
-      setPickMode("dest");
-    } else {
-      setCustomDest({ coords, name });
-      setPickMode("dep");
-    }
-  };
+  }, [depCoords, destCoords]);
 
   const handleClearLocations = () => {
-    setCustomDep(null);
-    setCustomDest(null);
+    setSelectedDepCity("");
+    setSelectedDestCity("");
     setUserRouteGeometry(null);
-    setPickMode("dep");
   };
 
   const matchedTrips = useMemo(() => {
     return tripsWithRoutes.filter((t) => {
       const tDep = (t.departure_city || "").toLowerCase().trim();
       const tDest = (t.destination_city || "").toLowerCase().trim();
-      const cDep = (customDep?.name || "").toLowerCase().trim();
-      const cDest = (customDest?.name || "").toLowerCase().trim();
+      const cDep = (selectedDepCity || "").toLowerCase().trim();
+      const cDest = (selectedDestCity || "").toLowerCase().trim();
 
-      if (customDep || customDest) {
-        const matchDepText = !customDep || tDep.includes(cDep) || cDep.includes(tDep);
-        const matchDestText = !customDest || tDest.includes(cDest) || cDest.includes(tDest);
+      if (selectedDepCity || selectedDestCity) {
+        const matchDepText = !selectedDepCity || tDep.includes(cDep) || cDep.includes(tDep);
+        const matchDestText = !selectedDestCity || tDest.includes(cDest) || cDest.includes(tDest);
         const isDirectTextMatch = matchDepText && matchDestText;
 
         const isCorridorMatch =
           t.geometry &&
           isRouteCompatible(
-            customDep?.coords,
-            customDest?.coords,
+            depCoords,
+            destCoords,
             t.geometry,
             45
           );
@@ -176,132 +145,75 @@ export default function Trips() {
 
       return true;
     });
-  }, [tripsWithRoutes, customDep, customDest, filters]);
+  }, [tripsWithRoutes, selectedDepCity, selectedDestCity, depCoords, destCoords, filters]);
 
   return (
     <Container fluid className="py-4 px-lg-5" style={{ maxWidth: "1600px" }}>
       {/* Top Header */}
-      <div className="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
-        <div>
-          <h2 className="fw-bold mb-1" style={{ color: "var(--color-text-main)", letterSpacing: "-0.02em" }}>
-            Route & Highway Discovery
-          </h2>
-          <p className="text-muted small mb-0">
-            Click points on the map: rides passing through your road corridor will appear automatically.
-          </p>
-        </div>
-
-        {/* Custom Segmented Mode Control */}
-        <div
-          className="d-inline-flex p-1 rounded-3 shadow-sm border"
-          style={{ backgroundColor: "#ffffff", borderColor: "var(--color-border)" }}
-        >
-          <button
-            type="button"
-            className="btn btn-sm d-flex align-items-center gap-2 border-0 px-3 py-1 fw-medium"
-            style={{
-              backgroundColor: pickMode === "dep" ? "var(--color-primary)" : "transparent",
-              color: pickMode === "dep" ? "#ffffff" : "var(--color-text-muted)",
-              borderRadius: "6px",
-              transition: "all 0.15s ease",
-            }}
-            onClick={() => setPickMode("dep")}
-          >
-            <span
-              style={{
-                width: 7,
-                height: 7,
-                borderRadius: "50%",
-                backgroundColor: pickMode === "dep" ? "#ffffff" : "var(--color-primary)",
-              }}
-            />
-            Origin {pickMode === "dep" && "(Active)"}
-          </button>
-
-          <button
-            type="button"
-            className="btn btn-sm d-flex align-items-center gap-2 border-0 px-3 py-1 fw-medium"
-            style={{
-              backgroundColor: pickMode === "dest" ? "var(--color-danger)" : "transparent",
-              color: pickMode === "dest" ? "#ffffff" : "var(--color-text-muted)",
-              borderRadius: "6px",
-              transition: "all 0.15s ease",
-            }}
-            onClick={() => setPickMode("dest")}
-          >
-            <span
-              style={{
-                width: 7,
-                height: 7,
-                borderRadius: "50%",
-                backgroundColor: pickMode === "dest" ? "#ffffff" : "var(--color-danger)",
-              }}
-            />
-            Destination {pickMode === "dest" && "(Active)"}
-          </button>
-        </div>
+      <div className="mb-4">
+        <h2 className="fw-bold mb-1" style={{ color: "var(--color-text-main)", letterSpacing: "-0.02em" }}>
+          Route & Highway Discovery
+        </h2>
+        <p className="text-muted small mb-0">
+          Select origin and destination cities to discover shared rides matching your travel corridor.
+        </p>
       </div>
 
-      {/* Selected Route Chips */}
-      {(customDep || customDest) && (
-        <div className="d-flex flex-wrap align-items-center gap-2 mb-3">
-          {customDep && (
-            <span
-              className="badge px-3 py-2 d-inline-flex align-items-center gap-2 shadow-sm"
-              style={{
-                backgroundColor: "var(--color-secondary-subtle)",
-                color: "var(--color-primary)",
-                border: "1px solid var(--color-secondary)",
-                fontSize: "0.85rem",
-              }}
-            >
-              <span><strong>Origin:</strong> {customDep.name}</span>
-              <button
-                type="button"
-                className="btn-close btn-close-sm"
-                aria-label="Remove origin"
-                style={{ fontSize: "0.6rem" }}
-                onClick={() => setCustomDep(null)}
-              />
-            </span>
-          )}
-
-          {customDest && (
-            <span
-              className="badge px-3 py-2 d-inline-flex align-items-center gap-2 shadow-sm"
-              style={{
-                backgroundColor: "var(--color-accent-blush)",
-                color: "var(--color-accent-blush-text)",
-                border: "1px solid rgba(122, 60, 83, 0.2)",
-                fontSize: "0.85rem",
-              }}
-            >
-              <span><strong>Destination:</strong> {customDest.name}</span>
-              <button
-                type="button"
-                className="btn-close btn-close-sm"
-                aria-label="Remove destination"
-                style={{ fontSize: "0.6rem" }}
-                onClick={() => setCustomDest(null)}
-              />
-            </span>
-          )}
-
-          <button
-            type="button"
-            className="btn btn-link btn-sm text-muted text-decoration-none p-0 ms-2"
-            onClick={handleClearLocations}
-          >
-            Clear route
-          </button>
-        </div>
-      )}
-
-      {/* Filter Toolbar */}
-      <Card className="mb-4 shadow-sm border-0" style={{ backgroundColor: "#ffffff" }}>
+      {/* Filter Toolbar with City Selects */}
+      <Card className="mb-4 shadow-sm border-0">
         <Card.Body className="py-3 px-4">
           <Row className="g-3 align-items-end">
-            <Col xs={12} sm={4} md={3}>
+            <Col xs={12} sm={6} md={3}>
+              <Form.Label className="small fw-semibold text-muted mb-1 d-flex align-items-center gap-1">
+                <span style={{ width: 7, height: 7, borderRadius: "50%", backgroundColor: "var(--color-primary)" }} />
+                Departure City
+              </Form.Label>
+              <Form.Select
+                size="sm"
+                value={selectedDepCity}
+                onChange={(e) => setSelectedDepCity(e.target.value)}
+              >
+                <option value="">All Origins</option>
+                {Object.entries(groupedPlaces).map(([region, places]) => (
+                  <optgroup key={`feed-dep-${region}`} label={region}>
+                    {places.map((p) => (
+                      <option key={`feed-dep-${p.name}`} value={p.name}>
+                        {p.name}
+                      </option>
+                    ))}
+                  </optgroup>
+                ))}
+              </Form.Select>
+            </Col>
+
+            <Col xs={12} sm={6} md={3}>
+              <Form.Label className="small fw-semibold text-muted mb-1 d-flex align-items-center gap-1">
+                <span style={{ width: 7, height: 7, borderRadius: "50%", backgroundColor: "var(--color-danger)" }} />
+                Destination City
+              </Form.Label>
+              <Form.Select
+                size="sm"
+                value={selectedDestCity}
+                onChange={(e) => setSelectedDestCity(e.target.value)}
+              >
+                <option value="">All Destinations</option>
+                {Object.entries(groupedPlaces).map(([region, places]) => (
+                  <optgroup key={`feed-dest-${region}`} label={region}>
+                    {places.map((p) => (
+                      <option
+                        key={`feed-dest-${p.name}`}
+                        value={p.name}
+                        disabled={p.name === selectedDepCity}
+                      >
+                        {p.name}
+                      </option>
+                    ))}
+                  </optgroup>
+                ))}
+              </Form.Select>
+            </Col>
+
+            <Col xs={6} sm={4} md={2}>
               <Form.Label className="small fw-semibold text-muted mb-1">Departure Date</Form.Label>
               <Form.Control
                 size="sm"
@@ -325,29 +237,16 @@ export default function Trips() {
               </Form.Select>
             </Col>
 
-            <Col xs={6} sm={4} md={4}>
-              <div className="d-flex justify-content-between small fw-semibold text-muted mb-1">
-                <span>Max Price</span>
-                <span style={{ color: "var(--color-primary)" }}>
-                  {filters.max_price ? `${filters.max_price} MAD` : "Any"}
-                </span>
-              </div>
-              <Form.Range
-                min="20"
-                max="500"
-                step="10"
-                value={filters.max_price || 500}
-                onChange={(e) => setFilters({ ...filters, max_price: e.target.value })}
-              />
-            </Col>
-
-            <Col xs={12} md={3} className="d-flex justify-content-md-end">
+            <Col xs={12} sm={4} md={2} className="d-flex justify-content-md-end">
               <button
                 type="button"
-                className="btn btn-sm btn-outline-orange w-100 w-md-auto px-3"
-                onClick={() => setFilters({ date: "", seats: "", max_price: "" })}
+                className="btn btn-sm btn-outline-secondary w-100"
+                onClick={() => {
+                  handleClearLocations();
+                  setFilters({ date: "", seats: "", max_price: "" });
+                }}
               >
-                Clear Filters
+                Reset All
               </button>
             </Col>
           </Row>
@@ -373,7 +272,7 @@ export default function Trips() {
             <Card className="border-0 shadow-sm p-5 text-center bg-white">
               <p className="text-muted mb-1">No rides match this route corridor.</p>
               <span className="small text-secondary">
-                Try clicking another point along the map or widening your filters.
+                Try widening your filters or selecting a different arrival city.
               </span>
             </Card>
           ) : (
@@ -395,22 +294,18 @@ export default function Trips() {
           )}
         </Col>
 
-        {/* Right: Map */}
+        {/* Right: Map Preview */}
         <Col lg={7}>
           <Card className="shadow-sm border-0 sticky-top overflow-hidden" style={{ top: "1rem", height: "78vh", borderRadius: "var(--radius-md)" }}>
             <div
               className="px-3 py-2 d-flex justify-content-between align-items-center small border-bottom"
-              style={{ backgroundColor: "#ffffff", borderColor: "var(--color-border)" }}
+              style={{ backgroundColor: "var(--color-surface)", borderColor: "var(--color-border-subtle)" }}
             >
-              <div className="d-flex align-items-center gap-2">
-                <span className="text-muted">Click map to select:</span>
-                <span
-                  className="fw-semibold"
-                  style={{ color: pickMode === "dep" ? "var(--color-primary)" : "var(--color-danger)" }}
-                >
-                  {pickMode === "dep" ? "Departure point" : "Arrival destination"}
-                </span>
-              </div>
+              <span className="fw-semibold text-muted">
+                {selectedDepCity && selectedDestCity
+                  ? `Corridor: ${selectedDepCity} ➔ ${selectedDestCity}`
+                  : "All Available Journey Corridors"}
+              </span>
               <span className="text-muted" style={{ fontSize: "11px" }}>
                 OSRM Routing Engine
               </span>
@@ -427,47 +322,27 @@ export default function Trips() {
                 url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
               />
 
-              <MapClickHandler pickMode={pickMode} onLocationSelected={handleLocationSelected} />
-
-              {customDep && (
-                <>
-                  <Marker position={customDep.coords} icon={greenIcon}>
-                    <Popup>
-                      <strong>Selected Origin</strong>
-                      <br />
-                      {customDep.name}
-                    </Popup>
-                  </Marker>
-                  <Circle
-                    center={customDep.coords}
-                    radius={35000}
-                    pathOptions={{ color: "#527050", fillColor: "#527050", fillOpacity: 0.12 }}
-                  />
-                </>
+              {depCoords && (
+                <Marker position={depCoords} icon={departureIcon}>
+                  <Popup>
+                    <strong>Origin: {selectedDepCity}</strong>
+                  </Popup>
+                </Marker>
               )}
 
-              {customDest && (
-                <>
-                  <Marker position={customDest.coords} icon={redIcon}>
-                    <Popup>
-                      <strong>Selected Destination</strong>
-                      <br />
-                      {customDest.name}
-                    </Popup>
-                  </Marker>
-                  <Circle
-                    center={customDest.coords}
-                    radius={35000}
-                    pathOptions={{ color: "#b24747", fillColor: "#b24747", fillOpacity: 0.12 }}
-                  />
-                </>
+              {destCoords && (
+                <Marker position={destCoords} icon={destinationIcon}>
+                  <Popup>
+                    <strong>Destination: {selectedDestCity}</strong>
+                  </Popup>
+                </Marker>
               )}
 
               {userRouteGeometry && (
                 <Polyline
                   positions={userRouteGeometry}
                   pathOptions={{
-                    color: "#946927",
+                    color: "var(--color-warning)",
                     weight: 6,
                     opacity: 0.85,
                   }}
@@ -484,7 +359,7 @@ export default function Trips() {
                     key={trip.id}
                     positions={routeCoords}
                     pathOptions={{
-                      color: isHighlighted ? "#527050" : "#8a968a",
+                      color: isHighlighted ? "var(--color-primary)" : "var(--color-text-subtle)",
                       weight: isHighlighted ? 5 : 2.5,
                       opacity: isHighlighted ? 1 : 0.45,
                     }}
