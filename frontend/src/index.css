@@ -454,3 +454,56 @@ input[type="range"]::-moz-range-thumb {
 .badge-vehicle-verified svg {
   color: var(--color-primary) !important;
 }
+
+
+/* ========================================================
+   MOBILE-FIRST RESPONSIVE ADAPTATIONS
+   ======================================================== */
+
+/* Fix horizontal screen bleeding and tap targets on mobile */
+html, body {
+  overflow-x: hidden;
+  touch-action: manipulation;
+}
+
+/* Ensure buttons and inputs are comfortable for thumbs (44px touch target) */
+@media (max-width: 768px) {
+  .btn,
+  .form-control,
+  .form-select {
+    min-height: 44px;
+    font-size: 16px !important; /* Prevents iOS auto-zoom on input focus */
+  }
+
+  /* Compact container padding */
+  .container-fluid {
+    padding-left: 1rem !important;
+    padding-right: 1rem !important;
+  }
+
+  /* Responsive map heights */
+  .responsive-map-container {
+    height: 320px !important;
+    max-height: 45vh !important;
+  }
+
+  /* Feed scroll constraint relaxed on phone screens */
+  .trip-feed-container {
+    max-height: none !important;
+    overflow-y: visible !important;
+    padding-right: 0 !important;
+  }
+
+  /* Stacked card headers */
+  .card-header-responsive {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 0.75rem !important;
+  }
+}
+
+@media (min-width: 769px) {
+  .responsive-map-container {
+    height: 78vh !important;
+  }
+}

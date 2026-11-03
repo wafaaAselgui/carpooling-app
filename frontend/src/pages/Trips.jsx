@@ -47,6 +47,9 @@ export default function Trips() {
   const [error, setError] = useState(null);
   const [activeTripId, setActiveTripId] = useState(null);
 
+  // Mobile viewport view tab: 'list' | 'map'
+  const [mobileView, setMobileView] = useState("list");
+
   const [selectedDepCity, setSelectedDepCity] = useState("");
   const [selectedDestCity, setSelectedDestCity] = useState("");
   const [userRouteGeometry, setUserRouteGeometry] = useState(null);
@@ -148,10 +151,10 @@ export default function Trips() {
   }, [tripsWithRoutes, selectedDepCity, selectedDestCity, depCoords, destCoords, filters]);
 
   return (
-    <Container fluid className="py-4 px-lg-5" style={{ maxWidth: "1600px" }}>
+    <Container fluid className="py-3 py-md-4 px-3 px-lg-5" style={{ maxWidth: "1600px" }}>
       {/* Top Header */}
-      <div className="mb-4">
-        <h2 className="fw-bold mb-1" style={{ color: "var(--color-text-main)", letterSpacing: "-0.02em" }}>
+      <div className="mb-3 mb-md-4">
+        <h2 className="fw-bold mb-1 fs-4 fs-md-2" style={{ color: "var(--color-text-main)", letterSpacing: "-0.02em" }}>
           Route & Highway Discovery
         </h2>
         <p className="text-muted small mb-0">
@@ -159,11 +162,11 @@ export default function Trips() {
         </p>
       </div>
 
-      {/* Filter Toolbar with City Selects */}
-      <Card className="mb-4 shadow-sm border-0">
-        <Card.Body className="py-3 px-4">
-          <Row className="g-3 align-items-end">
-            <Col xs={12} sm={6} md={3}>
+      {/* Filter Toolbar */}
+      <Card className="mb-3 mb-md-4 shadow-sm border-0">
+        <Card.Body className="p-3 p-md-4">
+          <Row className="g-2 g-md-3 align-items-end">
+            <Col xs={12} sm={6} lg={3}>
               <Form.Label className="small fw-semibold text-muted mb-1 d-flex align-items-center gap-1">
                 <span style={{ width: 7, height: 7, borderRadius: "50%", backgroundColor: "var(--color-primary)" }} />
                 Departure City
@@ -186,7 +189,7 @@ export default function Trips() {
               </Form.Select>
             </Col>
 
-            <Col xs={12} sm={6} md={3}>
+            <Col xs={12} sm={6} lg={3}>
               <Form.Label className="small fw-semibold text-muted mb-1 d-flex align-items-center gap-1">
                 <span style={{ width: 7, height: 7, borderRadius: "50%", backgroundColor: "var(--color-danger)" }} />
                 Destination City
@@ -213,7 +216,7 @@ export default function Trips() {
               </Form.Select>
             </Col>
 
-            <Col xs={6} sm={4} md={2}>
+            <Col xs={6} sm={4} lg={2}>
               <Form.Label className="small fw-semibold text-muted mb-1">Departure Date</Form.Label>
               <Form.Control
                 size="sm"
@@ -223,7 +226,7 @@ export default function Trips() {
               />
             </Col>
 
-            <Col xs={6} sm={4} md={2}>
+            <Col xs={6} sm={4} lg={2}>
               <Form.Label className="small fw-semibold text-muted mb-1">Min. Seats</Form.Label>
               <Form.Select
                 size="sm"
@@ -237,7 +240,7 @@ export default function Trips() {
               </Form.Select>
             </Col>
 
-            <Col xs={12} sm={4} md={2} className="d-flex justify-content-md-end">
+            <Col xs={12} sm={4} lg={2} className="d-flex justify-content-lg-end mt-2 mt-sm-0">
               <button
                 type="button"
                 className="btn btn-sm btn-outline-secondary w-100"
@@ -255,11 +258,50 @@ export default function Trips() {
 
       {error && <Alert variant="danger">{error}</Alert>}
 
+      {/* Mobile-Only Segmented Control (Switches between List & Map on Phones) */}
+      <div className="d-flex d-lg-none justify-content-center mb-3">
+        <div
+          className="d-inline-flex p-1 rounded-3 border w-100 shadow-sm"
+          style={{ backgroundColor: "var(--color-surface)", borderColor: "var(--color-border)" }}
+        >
+          <button
+            type="button"
+            className="btn btn-sm flex-fill border-0 fw-semibold"
+            style={{
+              backgroundColor: mobileView === "list" ? "var(--color-primary)" : "transparent",
+              color: mobileView === "list" ? "#ffffff" : "var(--color-text-muted)",
+              borderRadius: "var(--radius-sm)",
+              transition: "all 0.15s ease",
+            }}
+            onClick={() => setMobileView("list")}
+          >
+            Rides ({matchedTrips.length})
+          </button>
+          <button
+            type="button"
+            className="btn btn-sm flex-fill border-0 fw-semibold"
+            style={{
+              backgroundColor: mobileView === "map" ? "var(--color-primary)" : "transparent",
+              color: mobileView === "map" ? "#ffffff" : "var(--color-text-muted)",
+              borderRadius: "var(--radius-sm)",
+              transition: "all 0.15s ease",
+            }}
+            onClick={() => setMobileView("map")}
+          >
+            Route Map
+          </button>
+        </div>
+      </div>
+
       {/* Main Grid: Feed + Map */}
-      <Row className="g-4">
+      <Row className="g-3 g-lg-4">
         {/* Left: Feed */}
-        <Col lg={5} className="trip-feed-container" style={{ maxHeight: "78vh", overflowY: "auto", paddingRight: "1rem" }}>
-          <div className="mb-2 text-muted fw-medium small">
+        <Col
+          lg={5}
+          className={`trip-feed-container ${mobileView === "map" ? "d-none d-lg-block" : "d-block"}`}
+          style={{ maxHeight: "78vh", overflowY: "auto", paddingRight: "0.5rem" }}
+        >
+          <div className="d-none d-lg-block mb-2 text-muted fw-medium small">
             {matchedTrips.length} ride{matchedTrips.length === 1 ? "" : "s"} available
           </div>
 
@@ -269,14 +311,14 @@ export default function Trips() {
               <p className="mt-2 text-muted small">Loading journeys...</p>
             </div>
           ) : matchedTrips.length === 0 ? (
-            <Card className="border-0 shadow-sm p-5 text-center bg-white">
+            <Card className="border-0 shadow-sm p-4 p-md-5 text-center bg-white">
               <p className="text-muted mb-1">No rides match this route corridor.</p>
               <span className="small text-secondary">
                 Try widening your filters or selecting a different arrival city.
               </span>
             </Card>
           ) : (
-            <div className="d-flex flex-column gap-3">
+            <div className="d-flex flex-column gap-2 gap-md-3">
               {matchedTrips.map((trip) => (
                 <div
                   key={trip.id}
@@ -295,84 +337,92 @@ export default function Trips() {
         </Col>
 
         {/* Right: Map Preview */}
-        <Col lg={7}>
-          <Card className="shadow-sm border-0 sticky-top overflow-hidden" style={{ top: "1rem", height: "78vh", borderRadius: "var(--radius-md)" }}>
+        <Col
+          lg={7}
+          className={`${mobileView === "list" ? "d-none d-lg-block" : "d-block"}`}
+        >
+          <Card
+            className="shadow-sm border-0 sticky-top overflow-hidden responsive-map-container"
+            style={{ top: "1rem", borderRadius: "var(--radius-md)" }}
+          >
             <div
               className="px-3 py-2 d-flex justify-content-between align-items-center small border-bottom"
               style={{ backgroundColor: "var(--color-surface)", borderColor: "var(--color-border-subtle)" }}
             >
-              <span className="fw-semibold text-muted">
+              <span className="fw-semibold text-muted text-truncate me-2">
                 {selectedDepCity && selectedDestCity
                   ? `Corridor: ${selectedDepCity} ➔ ${selectedDestCity}`
-                  : "All Available Journey Corridors"}
+                  : "Moroccan Journey Corridors"}
               </span>
-              <span className="text-muted" style={{ fontSize: "11px" }}>
-                OSRM Routing Engine
+              <span className="text-muted" style={{ fontSize: "11px", whiteSpace: "nowrap" }}>
+                OSRM Engine
               </span>
             </div>
 
-            <MapContainer
-              center={[31.7917, -7.0926]}
-              zoom={6}
-              scrollWheelZoom={true}
-              style={{ width: "100%", height: "100%" }}
-            >
-              <TileLayer
-                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-              />
-
-              {depCoords && (
-                <Marker position={depCoords} icon={departureIcon}>
-                  <Popup>
-                    <strong>Origin: {selectedDepCity}</strong>
-                  </Popup>
-                </Marker>
-              )}
-
-              {destCoords && (
-                <Marker position={destCoords} icon={destinationIcon}>
-                  <Popup>
-                    <strong>Destination: {selectedDestCity}</strong>
-                  </Popup>
-                </Marker>
-              )}
-
-              {userRouteGeometry && (
-                <Polyline
-                  positions={userRouteGeometry}
-                  pathOptions={{
-                    color: "var(--color-warning)",
-                    weight: 6,
-                    opacity: 0.85,
-                  }}
+            <div style={{ height: "100%", width: "100%", minHeight: "340px" }}>
+              <MapContainer
+                center={[31.7917, -7.0926]}
+                zoom={6}
+                scrollWheelZoom={false}
+                style={{ width: "100%", height: "100%" }}
+              >
+                <TileLayer
+                  attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                 />
-              )}
 
-              {matchedTrips.map((trip) => {
-                const routeCoords = trip.geometry || (trip.dep && trip.dest ? [trip.dep, trip.dest] : null);
-                if (!routeCoords) return null;
-
-                const isHighlighted = activeTripId === trip.id;
-                return (
-                  <Polyline
-                    key={trip.id}
-                    positions={routeCoords}
-                    pathOptions={{
-                      color: isHighlighted ? "var(--color-primary)" : "var(--color-text-subtle)",
-                      weight: isHighlighted ? 5 : 2.5,
-                      opacity: isHighlighted ? 1 : 0.45,
-                    }}
-                  >
+                {depCoords && (
+                  <Marker position={depCoords} icon={departureIcon}>
                     <Popup>
-                      <strong>{trip.departure_city} → {trip.destination_city}</strong>
-                      <br />
-                      Price: {trip.price_per_seat} MAD / seat
+                      <strong>Origin: {selectedDepCity}</strong>
                     </Popup>
-                  </Polyline>
-                );
-              })}
-            </MapContainer>
+                  </Marker>
+                )}
+
+                {destCoords && (
+                  <Marker position={destCoords} icon={destinationIcon}>
+                    <Popup>
+                      <strong>Destination: {selectedDestCity}</strong>
+                    </Popup>
+                  </Marker>
+                )}
+
+                {userRouteGeometry && (
+                  <Polyline
+                    positions={userRouteGeometry}
+                    pathOptions={{
+                      color: "var(--color-warning)",
+                      weight: 5,
+                      opacity: 0.85,
+                    }}
+                  />
+                )}
+
+                {matchedTrips.map((trip) => {
+                  const routeCoords = trip.geometry || (trip.dep && trip.dest ? [trip.dep, trip.dest] : null);
+                  if (!routeCoords) return null;
+
+                  const isHighlighted = activeTripId === trip.id;
+                  return (
+                    <Polyline
+                      key={trip.id}
+                      positions={routeCoords}
+                      pathOptions={{
+                        color: isHighlighted ? "var(--color-primary)" : "var(--color-text-subtle)",
+                        weight: isHighlighted ? 5 : 2.5,
+                        opacity: isHighlighted ? 1 : 0.45,
+                      }}
+                    >
+                      <Popup>
+                        <strong>{trip.departure_city} → {trip.destination_city}</strong>
+                        <br />
+                        Price: {trip.price_per_seat} MAD / seat
+                      </Popup>
+                    </Polyline>
+                  );
+                })}
+              </MapContainer>
+            </div>
           </Card>
         </Col>
       </Row>
