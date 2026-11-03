@@ -242,8 +242,12 @@ export default function Trips() {
 
             <Col xs={12} sm={4} lg={2} className="d-flex justify-content-lg-end mt-2 mt-sm-0">
               <button
-                type="button"
-                className="btn btn-sm btn-outline-secondary w-100"
+                size="sm"
+                className="ms-lg-2  w-100"
+                style={{
+                    borderColor: "var(--brand-navy)",
+                    color: "var(--brand-teal-mist)",
+                  }}
                 onClick={() => {
                   handleClearLocations();
                   setFilters({ date: "", seats: "", max_price: "" });

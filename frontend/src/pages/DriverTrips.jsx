@@ -131,7 +131,7 @@ export default function DriverTrips() {
             className="badge px-2 py-1"
             style={{ backgroundColor: "var(--color-warning-subtle)", color: "var(--color-warning)", border: "1px solid rgba(138, 90, 0, 0.2)" }}
           >
-            Pending Approval
+            Pending
           </span>
         );
       case "rejected":
@@ -181,9 +181,9 @@ export default function DriverTrips() {
   }
 
   return (
-    <Container className="py-4 px-lg-5" style={{ maxWidth: "1200px" }}>
-      <div className="mb-4">
-        <h2 className="fw-bold mb-1">Driver Schedule</h2>
+    <Container fluid className="py-3 py-md-4 px-3 px-lg-5" style={{ maxWidth: "1200px" }}>
+      <div className="mb-3 mb-md-4">
+        <h2 className="fw-bold mb-1 fs-4 fs-md-2">Driver Schedule</h2>
         <p className="text-muted small mb-0">Manage passenger booking requests, track available capacity, and review completed journeys.</p>
       </div>
 
@@ -191,6 +191,7 @@ export default function DriverTrips() {
         <Alert
           dismissible
           onClose={() => setFeedback(null)}
+          className="mb-3"
           style={{ backgroundColor: "var(--color-success-subtle)", color: "var(--color-success)", border: "none" }}
         >
           {feedback}
@@ -201,6 +202,7 @@ export default function DriverTrips() {
         <Alert
           dismissible
           onClose={() => setError(null)}
+          className="mb-3"
           style={{ backgroundColor: "var(--color-danger-subtle)", color: "var(--color-danger)", border: "none" }}
         >
           {error}
@@ -208,7 +210,7 @@ export default function DriverTrips() {
       )}
 
       {trips.length === 0 ? (
-        <Card className="border-0 shadow-sm p-5 text-center">
+        <Card className="border-0 shadow-sm p-4 p-md-5 text-center">
           <p className="text-muted mb-3">You have not published any rides yet.</p>
           <div>
             <Button as={Link} to="/create-trip" variant="primary" size="sm">
@@ -221,13 +223,13 @@ export default function DriverTrips() {
           const isCompleted = trip.status === "completed";
 
           return (
-            <Card key={trip.id} className="shadow-sm border-0 mb-4 overflow-hidden">
+            <Card key={trip.id} className="shadow-sm border-0 mb-3 mb-md-4 overflow-hidden">
               <Card.Header
-                className="bg-white py-3 border-bottom d-flex justify-content-between align-items-center flex-wrap gap-2"
+                className="bg-white py-3 border-bottom d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-2"
                 style={{ borderColor: "var(--color-border-subtle)" }}
               >
                 <div>
-                  <h5 className="fw-semibold mb-1 text-capitalize">
+                  <h5 className="fw-semibold mb-1 text-capitalize fs-6 fs-md-5">
                     {trip.departure_city}
                     <span className="mx-2 text-muted" style={{ fontWeight: 300 }}>→</span>
                     {trip.destination_city}
@@ -252,32 +254,23 @@ export default function DriverTrips() {
                   </div>
                 </div>
 
-                <div className="d-flex align-items-center gap-3">
+                <div className="d-flex align-items-center justify-content-between w-100 w-md-auto gap-3 pt-2 pt-md-0 border-top border-md-top-0" style={{ borderColor: "var(--color-border-subtle)" }}>
                   <span className="small text-muted">
-                    Capacity: <strong>{trip.available_seats} / {trip.total_seats} seats free</strong>
+                    Capacity: <strong>{trip.available_seats} / {trip.total_seats} free</strong>
                   </span>
                   {renderTripBadge(trip.status)}
                 </div>
               </Card.Header>
 
-              <Card.Body className="p-4">
+              <Card.Body className="p-3 p-md-4">
                 <h6 className="fw-semibold text-uppercase text-muted small mb-3">Passenger Requests</h6>
 
                 {!trip.bookings || trip.bookings.length === 0 ? (
                   <p className="text-muted small mb-0">No booking requests submitted for this ride yet.</p>
                 ) : (
-                  <Table responsive hover align="middle" className="mb-0 small">
-                    <thead>
-                      <tr>
-                        <th>Passenger</th>
-                        <th>Contact Info</th>
-                        <th>Seats Requested</th>
-                        <th>Total Value</th>
-                        <th>Booking State</th>
-                        <th>Response</th>
-                      </tr>
-                    </thead>
-                    <tbody>
+                  <>
+                    {/* 1. Mobile Cards View (< 768px) */}
+                    <div className="d-flex flex-column gap-2 d-md-none">
                       {trip.bookings.map((booking) => {
                         const passenger = booking.user;
                         const driverAlreadyReviewed = booking.reviews?.some(
@@ -285,15 +278,19 @@ export default function DriverTrips() {
                         );
 
                         return (
-                          <tr key={booking.id}>
-                            <td>
+                          <div
+                            key={`mobile-b-${booking.id}`}
+                            className="p-3 border rounded-3 bg-white"
+                            style={{ borderColor: "var(--color-border-subtle)" }}
+                          >
+                            <div className="d-flex justify-content-between align-items-start mb-2">
                               <div className="d-flex align-items-center gap-2">
                                 <Link to={`/users/${passenger?.id}/profile`}>
                                   <Image
                                     src={getPassengerAvatar(passenger)}
                                     roundedCircle
-                                    width={34}
-                                    height={34}
+                                    width={36}
+                                    height={36}
                                     className="object-fit-cover border"
                                     style={{ borderColor: "var(--color-border)" }}
                                     alt={passenger?.name || "Passenger"}
@@ -302,90 +299,196 @@ export default function DriverTrips() {
                                 <div>
                                   <Link
                                     to={`/users/${passenger?.id}/profile`}
-                                    className="fw-semibold text-decoration-none hover-primary"
+                                    className="fw-semibold text-decoration-none hover-primary d-block"
                                     style={{ color: "var(--color-text-main)" }}
                                   >
                                     {passenger?.name || "Anonymous"}
                                   </Link>
-                                  {passenger?.verification_status === "verified" && (
-                                    <div className="mt-1">
-                                      <span className="badge badge-sage py-0 px-1" style={{ fontSize: "10px" }}>
-                                        Verified ID
-                                      </span>
-                                    </div>
-                                  )}
+                                  <div className="text-muted" style={{ fontSize: "11px" }}>
+                                    {passenger?.phone || passenger?.email || "No contact info"}
+                                  </div>
                                 </div>
                               </div>
-                            </td>
-                            <td>
-                              <div>{passenger?.email || "No email"}</div>
-                              <div className="text-muted" style={{ fontSize: "11px" }}>
-                                {passenger?.phone || "No phone provided"}
-                              </div>
-                            </td>
-                            <td>
-                              <strong>{booking.seats}</strong> seat{booking.seats > 1 ? "s" : ""}
-                            </td>
-                            <td>
+                              <div>{renderBookingBadge(booking.status)}</div>
+                            </div>
+
+                            <div className="d-flex justify-content-between align-items-center py-2 border-top border-bottom my-2 small" style={{ borderColor: "var(--color-border-subtle)" }}>
+                              <span className="text-muted">
+                                Seats: <strong>{booking.seats}</strong>
+                              </span>
                               <strong style={{ color: "var(--color-primary-text)" }}>
                                 {booking.seats * trip.price_per_seat} MAD
                               </strong>
-                            </td>
-                            <td>{renderBookingBadge(booking.status)}</td>
-                            <td>
-                              {booking.status === "pending" ? (
-                                <div className="d-flex gap-1">
-                                  <Button
-                                    size="sm"
-                                    variant="primary"
-                                    disabled={
-                                      actionLoading === booking.id ||
-                                      trip.available_seats < booking.seats
-                                    }
-                                    onClick={() => handleBookingResponse(booking.id, "accept")}
-                                  >
-                                    Accept
-                                  </Button>
-                                  <Button
-                                    size="sm"
-                                    variant="outline-danger"
-                                    disabled={actionLoading === booking.id}
-                                    onClick={() => handleBookingResponse(booking.id, "reject")}
-                                  >
-                                    Decline
-                                  </Button>
-                                </div>
-                              ) : isCompleted && booking.status === "confirmed" ? (
-                                driverAlreadyReviewed ? (
-                                  <span className="badge bg-light text-muted border py-1 px-2">
-                                    Feedback Submitted
-                                  </span>
-                                ) : (
-                                  <Button
-                                    size="sm"
-                                    variant="outline-secondary"
-                                    onClick={() => openReviewModal(booking)}
-                                  >
-                                    Rate Passenger
-                                  </Button>
-                                )
+                            </div>
+
+                            {booking.status === "pending" ? (
+                              <div className="d-flex gap-2 mt-2">
+                                <Button
+                                  size="sm"
+                                  variant="primary"
+                                  className="flex-fill"
+                                  disabled={
+                                    actionLoading === booking.id ||
+                                    trip.available_seats < booking.seats
+                                  }
+                                  onClick={() => handleBookingResponse(booking.id, "accept")}
+                                >
+                                  Accept
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline-danger"
+                                  className="flex-fill"
+                                  disabled={actionLoading === booking.id}
+                                  onClick={() => handleBookingResponse(booking.id, "reject")}
+                                >
+                                  Decline
+                                </Button>
+                              </div>
+                            ) : isCompleted && booking.status === "confirmed" ? (
+                              driverAlreadyReviewed ? (
+                                <span className="badge bg-light text-muted border py-1 px-2 w-100 text-center">
+                                  Feedback Submitted
+                                </span>
                               ) : (
-                                <span className="text-muted">—</span>
-                              )}
-                            </td>
-                          </tr>
+                                <Button
+                                  size="sm"
+                                  variant="outline-secondary"
+                                  className="w-100 mt-1"
+                                  onClick={() => openReviewModal(booking)}
+                                >
+                                  Rate Passenger
+                                </Button>
+                              )
+                            ) : null}
+                          </div>
                         );
                       })}
-                    </tbody>
-                  </Table>
+                    </div>
+
+                    {/* 2. Desktop Table View (>= 768px) */}
+                    <Table responsive hover align="middle" className="mb-0 small d-none d-md-table">
+                      <thead>
+                        <tr>
+                          <th>Passenger</th>
+                          <th>Contact Info</th>
+                          <th>Seats Requested</th>
+                          <th>Total Value</th>
+                          <th>Booking State</th>
+                          <th>Response</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {trip.bookings.map((booking) => {
+                          const passenger = booking.user;
+                          const driverAlreadyReviewed = booking.reviews?.some(
+                            (r) => r.reviewer_id === user?.id
+                          );
+
+                          return (
+                            <tr key={booking.id}>
+                              <td>
+                                <div className="d-flex align-items-center gap-2">
+                                  <Link to={`/users/${passenger?.id}/profile`}>
+                                    <Image
+                                      src={getPassengerAvatar(passenger)}
+                                      roundedCircle
+                                      width={34}
+                                      height={34}
+                                      className="object-fit-cover border"
+                                      style={{ borderColor: "var(--color-border)" }}
+                                      alt={passenger?.name || "Passenger"}
+                                    />
+                                  </Link>
+                                  <div>
+                                    <Link
+                                      to={`/users/${passenger?.id}/profile`}
+                                      className="fw-semibold text-decoration-none hover-primary"
+                                      style={{ color: "var(--color-text-main)" }}
+                                    >
+                                      {passenger?.name || "Anonymous"}
+                                    </Link>
+                                    {passenger?.verification_status === "verified" && (
+                                      <div className="mt-1">
+                                        <span className="badge badge-sage py-0 px-1" style={{ fontSize: "10px" }}>
+                                          Verified ID
+                                        </span>
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              </td>
+                              <td>
+                                <div>{passenger?.email || "No email"}</div>
+                                <div className="text-muted" style={{ fontSize: "11px" }}>
+                                  {passenger?.phone || "No phone provided"}
+                                </div>
+                              </td>
+                              <td>
+                                <strong>{booking.seats}</strong> seat{booking.seats > 1 ? "s" : ""}
+                              </td>
+                              <td>
+                                <strong style={{ color: "var(--color-primary-text)" }}>
+                                  {booking.seats * trip.price_per_seat} MAD
+                                </strong>
+                              </td>
+                              <td>{renderBookingBadge(booking.status)}</td>
+                              <td>
+                                {booking.status === "pending" ? (
+                                  <div className="d-flex gap-1">
+                                    <Button
+                                      size="sm"
+                                      variant="primary"
+                                      disabled={
+                                        actionLoading === booking.id ||
+                                        trip.available_seats < booking.seats
+                                      }
+                                      onClick={() => handleBookingResponse(booking.id, "accept")}
+                                    >
+                                      Accept
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      variant="outline-danger"
+                                      disabled={actionLoading === booking.id}
+                                      onClick={() => handleBookingResponse(booking.id, "reject")}
+                                    >
+                                      Decline
+                                    </Button>
+                                  </div>
+                                ) : isCompleted && booking.status === "confirmed" ? (
+                                  driverAlreadyReviewed ? (
+                                    <span className="badge bg-light text-muted border py-1 px-2">
+                                      Feedback Submitted
+                                    </span>
+                                  ) : (
+                                    <Button
+                                      size="sm"
+                                      variant="outline-secondary"
+                                      onClick={() => openReviewModal(booking)}
+                                    >
+                                      Rate Passenger
+                                    </Button>
+                                  )
+                                ) : (
+                                  <span className="text-muted">—</span>
+                                )}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </Table>
+                  </>
                 )}
               </Card.Body>
 
               {trip.status === "scheduled" && (
-                <Card.Footer className="bg-white border-top d-flex justify-content-end gap-2 py-3" style={{ borderColor: "var(--color-border-subtle)" }}>
+                <Card.Footer className="bg-white border-top d-flex flex-column flex-sm-row justify-content-sm-end gap-2 py-3" style={{ borderColor: "var(--color-border-subtle)" }}>
                   <Button
                     size="sm"
                     variant="outline-primary"
+                    className="w-100 w-sm-auto"
                     onClick={() => handleStatusChange(trip.id, "completed")}
                   >
                     Mark Journey Completed
@@ -393,6 +496,7 @@ export default function DriverTrips() {
                   <Button
                     size="sm"
                     variant="outline-danger"
+                    className="w-100 w-sm-auto"
                     onClick={() => handleStatusChange(trip.id, "cancelled")}
                   >
                     Cancel Ride
@@ -412,7 +516,7 @@ export default function DriverTrips() {
           </Modal.Title>
         </Modal.Header>
         <Form onSubmit={handleReviewSubmit}>
-          <Modal.Body className="p-4">
+          <Modal.Body className="p-3 p-md-4">
             <Form.Group className="mb-3 text-center">
               <Form.Label className="small fw-semibold text-muted d-block">Passenger Rating</Form.Label>
               <StarRatingInputs
@@ -431,14 +535,15 @@ export default function DriverTrips() {
               />
             </Form.Group>
           </Modal.Body>
-          <Modal.Footer style={{ borderColor: "var(--color-border-subtle)" }}>
-            <Button variant="outline-secondary" size="sm" onClick={() => setShowReviewModal(false)}>
+          <Modal.Footer className="flex-column flex-sm-row" style={{ borderColor: "var(--color-border-subtle)" }}>
+            <Button variant="outline-secondary" size="sm" className="w-100 w-sm-auto mb-2 mb-sm-0" onClick={() => setShowReviewModal(false)}>
               Cancel
             </Button>
             <Button
               variant="primary"
               size="sm"
               type="submit"
+              className="w-100 w-sm-auto"
               disabled={submittingReview}
             >
               {submittingReview ? "Submitting..." : "Submit Feedback"}

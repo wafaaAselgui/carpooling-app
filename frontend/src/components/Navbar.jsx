@@ -90,13 +90,13 @@ export default function AppNavbar() {
                 </Nav.Link>
 
                 <Button
-                  variant="outline-secondary"
+                  // variant="outline-secondary"
                   size="sm"
                   onClick={logoutUser}
                   className="ms-lg-2"
                   style={{
-                    borderColor: "var(--color-border)",
-                    color: "var(--color-text-muted)",
+                    borderColor: "var(--brand-navy)",
+                    color: "var(--brand-teal-mist)",
                   }}
                 >
                   Log Out
