@@ -33,9 +33,9 @@
 
   /* Accent (Amber): CTAs like "Book seat" / "Offer a ride", ratings, highlights */
   --color-accent: var(--brand-amber);              /* pair with navy text (9:1), never white (1.7:1) */
-  --color-accent-hover: #f29e00;                   /* navy text: 7.3:1 */
+  --color-accent-hover: #e08b0b;                   /* navy text: 7.3:1 */
   --color-accent-subtle: #fff3d1;
-  --color-accent-subtle-text: #7a5200;             /* on accent-subtle: 6.3:1 */
+  --color-accent-subtle-text: #573b03;             /* on accent-subtle: 6.3:1 */
   /* Aliases so existing components that use the old names keep working */
   --color-accent-blush: var(--color-accent-subtle);
   --color-accent-blush-text: var(--color-accent-subtle-text);
@@ -431,4 +431,26 @@ input[type="range"]::-moz-range-thumb {
 .leaflet-div-icon {
   background: transparent !important;
   border: none !important;
+}
+
+/* ========================================================
+   VEHICLE VERIFIED PILL BADGE
+   ======================================================== */
+.badge-vehicle-verified {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+  background-color: var(--brand-amber) !important;
+  color: var(--color-accent-subtle-text) !important;
+  border: 1px solid var(--brand-exotic-pitaya) !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  padding: 2px 8px !important;
+  border-radius: 9999px !important;
+  letter-spacing: 0.01em !important;
+  box-shadow: 0 1px 2px rgba(227, 27, 109, 0.06) !important;
+}
+
+.badge-vehicle-verified svg {
+  color: var(--color-primary) !important;
 }
