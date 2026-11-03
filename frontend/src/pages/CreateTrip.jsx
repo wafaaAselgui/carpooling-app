@@ -110,8 +110,8 @@ export default function CreateTrip() {
     const isPending = user?.verification_status === "pending";
 
     return (
-      <Container className="py-5" style={{ maxWidth: "600px" }}>
-        <Card className="shadow-sm border-0 text-center p-4">
+      <Container className="py-4 py-md-5 px-3" style={{ maxWidth: "560px" }}>
+        <Card className="shadow-sm border-0 text-center p-3 p-md-4">
           <Card.Body>
             <div
               className="d-inline-flex align-items-center justify-content-center mb-3"
@@ -127,7 +127,7 @@ export default function CreateTrip() {
                 <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
               </svg>
             </div>
-            <h4 className="fw-semibold mb-2" style={{ color: "var(--color-text-main)" }}>
+            <h4 className="fw-semibold mb-2 fs-5 fs-md-4" style={{ color: "var(--color-text-main)" }}>
               Driver Verification Required
             </h4>
             <p className="text-muted small mb-4">
@@ -135,11 +135,11 @@ export default function CreateTrip() {
                 ? "Your identification documents are currently under review. You will be able to publish rides once verified."
                 : "To preserve safety and trust, drivers must verify their identity credentials before offering seats."}
             </p>
-            <div className="d-flex justify-content-center gap-2">
-              <Button as={Link} to="/profile" variant="primary" size="sm">
+            <div className="d-flex flex-column flex-sm-row justify-content-center gap-2">
+              <Button as={Link} to="/profile" variant="primary" size="sm" className="w-100 w-sm-auto">
                 {isPending ? "View Profile Status" : "Upload Verification Documents"}
               </Button>
-              <Button as={Link} to="/" variant="outline-secondary" size="sm">
+              <Button as={Link} to="/" variant="outline-secondary" size="sm" className="w-100 w-sm-auto">
                 Back to Discovery
               </Button>
             </div>
@@ -150,10 +150,15 @@ export default function CreateTrip() {
   }
 
   return (
-    <Container fluid className="py-4 px-lg-5">
-      <div className="mb-4">
-        <h3 className="fw-bold mb-1" style={{ color: "var(--color-text-main)" }}>Publish a New Ride</h3>
-        <p className="text-muted small mb-0">Select your departure and arrival cities to preview the route.</p>
+    <Container fluid className="py-3 py-md-4 px-3 px-lg-5" style={{ maxWidth: "1600px" }}>
+      {/* Page Header */}
+      <div className="mb-3 mb-md-4">
+        <h3 className="fw-bold mb-1 fs-4 fs-md-3" style={{ color: "var(--color-text-main)" }}>
+          Publish a New Ride
+        </h3>
+        <p className="text-muted small mb-0">
+          Select departure and arrival cities to verify the route and schedule seats.
+        </p>
       </div>
 
       {error && (
@@ -161,6 +166,7 @@ export default function CreateTrip() {
           variant="danger"
           dismissible
           onClose={() => setError(null)}
+          className="mb-3"
           style={{
             backgroundColor: "var(--color-danger-subtle)",
             borderColor: "rgba(178, 71, 71, 0.2)",
@@ -173,13 +179,13 @@ export default function CreateTrip() {
 
       {verifiedVehicles.length === 0 ? (
         <Alert
-          className="border-0 shadow-sm p-4"
+          className="border-0 shadow-sm p-3 p-md-4"
           style={{
             backgroundColor: "var(--color-warning-subtle)",
             color: "var(--color-warning)",
           }}
         >
-          <h5 className="fw-semibold mb-2">Verified Vehicle Required</h5>
+          <h5 className="fw-semibold mb-2 fs-6">Verified Vehicle Required</h5>
           <p className="small mb-3" style={{ color: "var(--color-text-muted)" }}>
             Your driver identity is approved, but you need at least one verified vehicle.
             Please ensure your registration certificate (Carte Grise) and insurance papers
@@ -190,16 +196,17 @@ export default function CreateTrip() {
           </Button>
         </Alert>
       ) : (
-        <Row className="g-4">
-          {/* Left Column: Form Inputs */}
-          <Col lg={6}>
-            <Card className="shadow-sm border-0 h-100">
-              <Card.Body className="p-4">
+        /* Form inputs appear first on mobile, then route preview map below */
+        <Row className="g-3 g-lg-4 flex-column-reverse flex-lg-row">
+          {/* Form Column */}
+          <Col lg={7}>
+            <Card className="shadow-sm border-0">
+              <Card.Body className="p-3 p-md-4">
                 <Form onSubmit={handleSubmit}>
-                  <Row className="g-3">
-                    {/* Departure City Select */}
-                    <Col sm={6}>
-                      <Form.Label className="small fw-semibold text-muted d-flex align-items-center gap-1">
+                  <Row className="g-2 g-md-3">
+                    {/* Departure City */}
+                    <Col xs={12} sm={6}>
+                      <Form.Label className="small fw-semibold text-muted d-flex align-items-center gap-1 mb-1">
                         <span style={{ width: 8, height: 8, borderRadius: "50%", backgroundColor: "var(--color-primary)" }} />
                         Departure City
                       </Form.Label>
@@ -210,7 +217,7 @@ export default function CreateTrip() {
                       >
                         <option value="">Select departure city...</option>
                         {Object.entries(groupedPlaces).map(([region, places]) => (
-                          <optgroup key={region} label={region}>
+                          <optgroup key={`dep-reg-${region}`} label={region}>
                             {places.map((p) => (
                               <option key={`dep-${p.name}`} value={p.name}>
                                 {p.name}
@@ -221,9 +228,9 @@ export default function CreateTrip() {
                       </Form.Select>
                     </Col>
 
-                    {/* Destination City Select */}
-                    <Col sm={6}>
-                      <Form.Label className="small fw-semibold text-muted d-flex align-items-center gap-1">
+                    {/* Destination City */}
+                    <Col xs={12} sm={6}>
+                      <Form.Label className="small fw-semibold text-muted d-flex align-items-center gap-1 mb-1">
                         <span style={{ width: 8, height: 8, borderRadius: "50%", backgroundColor: "var(--color-danger)" }} />
                         Destination City
                       </Form.Label>
@@ -234,7 +241,7 @@ export default function CreateTrip() {
                       >
                         <option value="">Select destination city...</option>
                         {Object.entries(groupedPlaces).map(([region, places]) => (
-                          <optgroup key={region} label={region}>
+                          <optgroup key={`dest-reg-${region}`} label={region}>
                             {places.map((p) => (
                               <option
                                 key={`dest-${p.name}`}
@@ -249,8 +256,9 @@ export default function CreateTrip() {
                       </Form.Select>
                     </Col>
 
-                    <Col sm={6}>
-                      <Form.Label className="small fw-semibold text-muted">
+                    {/* Pickup Address */}
+                    <Col xs={12} sm={6}>
+                      <Form.Label className="small fw-semibold text-muted mb-1">
                         Pickup Meeting Point (Optional)
                       </Form.Label>
                       <Form.Control
@@ -261,8 +269,9 @@ export default function CreateTrip() {
                       />
                     </Col>
 
-                    <Col sm={6}>
-                      <Form.Label className="small fw-semibold text-muted">
+                    {/* Drop-off Address */}
+                    <Col xs={12} sm={6}>
+                      <Form.Label className="small fw-semibold text-muted mb-1">
                         Drop-off Point (Optional)
                       </Form.Label>
                       <Form.Control
@@ -273,8 +282,9 @@ export default function CreateTrip() {
                       />
                     </Col>
 
-                    <Col sm={6}>
-                      <Form.Label className="small fw-semibold text-muted">
+                    {/* Departure Time */}
+                    <Col xs={12} sm={6}>
+                      <Form.Label className="small fw-semibold text-muted mb-1">
                         Departure Date & Time
                       </Form.Label>
                       <Form.Control
@@ -285,8 +295,9 @@ export default function CreateTrip() {
                       />
                     </Col>
 
-                    <Col sm={6}>
-                      <Form.Label className="small fw-semibold text-muted">
+                    {/* Assigned Vehicle */}
+                    <Col xs={12} sm={6}>
+                      <Form.Label className="small fw-semibold text-muted mb-1">
                         Assigned Vehicle
                       </Form.Label>
                       <Form.Select
@@ -302,8 +313,9 @@ export default function CreateTrip() {
                       </Form.Select>
                     </Col>
 
-                    <Col sm={6}>
-                      <Form.Label className="small fw-semibold text-muted">
+                    {/* Available Seats */}
+                    <Col xs={6}>
+                      <Form.Label className="small fw-semibold text-muted mb-1">
                         Available Seats
                       </Form.Label>
                       <Form.Control
@@ -316,9 +328,10 @@ export default function CreateTrip() {
                       />
                     </Col>
 
-                    <Col sm={6}>
-                      <Form.Label className="small fw-semibold text-muted">
-                        Price per Seat (MAD)
+                    {/* Price Per Seat */}
+                    <Col xs={6}>
+                      <Form.Label className="small fw-semibold text-muted mb-1">
+                        Price / Seat (MAD)
                       </Form.Label>
                       <Form.Control
                         type="number"
@@ -334,7 +347,7 @@ export default function CreateTrip() {
                   <Button
                     type="submit"
                     variant="primary"
-                    className="w-100 mt-4 py-2"
+                    className="w-100 mt-3 mt-md-4 py-2"
                     disabled={submitting || !form.departure_city || !form.destination_city}
                   >
                     {submitting ? "Publishing Ride..." : "Publish Ride"}
@@ -344,16 +357,18 @@ export default function CreateTrip() {
             </Card>
           </Col>
 
-          {/* Right Column: Route Preview Map */}
-          <Col lg={6}>
-            <TripLocationPickerMap
-              depCoords={depCoords}
-              destCoords={destCoords}
-              departureCity={form.departure_city}
-              destinationCity={form.destination_city}
-              departureAddress={form.departure_address}
-              destinationAddress={form.destination_address}
-            />
+          {/* Map Preview Column */}
+          <Col lg={5}>
+            <div className="sticky-lg-top" style={{ top: "1rem" }}>
+              <TripLocationPickerMap
+                depCoords={depCoords}
+                destCoords={destCoords}
+                departureCity={form.departure_city}
+                destinationCity={form.destination_city}
+                departureAddress={form.departure_address}
+                destinationAddress={form.destination_address}
+              />
+            </div>
           </Col>
         </Row>
       )}
