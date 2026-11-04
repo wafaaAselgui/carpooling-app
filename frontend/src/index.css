@@ -21,7 +21,7 @@
   --color-surface: #ffffff;                        /* cards, inputs */
   --color-surface-tint: #e9f6f4;                   /* soft teal wash for hover / highlighted cards */
 
-  /* Primary (Teal) */
+  /* Primary (Teal) */ 
   --color-primary: #0b7f70;                        /* white text on it: 4.9:1 (AA). The raw brand teal is only ~3.4:1 with white */
   --color-primary-hover: #096556;                  /* white text: 7.0:1 */
   --color-primary-text: #096556;                   /* teal text/links on canvas: 6.6:1 */
@@ -35,7 +35,7 @@
   --color-accent: var(--brand-amber);              /* pair with navy text (9:1), never white (1.7:1) */
   --color-accent-hover: #e08b0b;                   /* navy text: 7.3:1 */
   --color-accent-subtle: #fff3d1;
-  --color-accent-subtle-text: #573b03;             /* on accent-subtle: 6.3:1 */
+  --color-accent-subtle-text:#573b03;             /* on accent-subtle: 6.3:1 */
   /* Aliases so existing components that use the old names keep working */
   --color-accent-blush: var(--color-accent-subtle);
   --color-accent-blush-text: var(--color-accent-subtle-text);
