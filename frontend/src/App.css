@@ -78,3 +78,59 @@ main,
   border-bottom: 1px solid var(--color-border-subtle);
   color: var(--color-text-main);
 }
+/* ========================================================
+   Mobile Offcanvas Drawer Polish
+   ======================================================== */
+@media (max-width: 991.98px) {
+  /* Force the drawer flush against the right edge of the screen */
+  .offcanvas.app-mobile-drawer {
+    position: fixed !important;
+    top: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    height: 100dvh !important;
+    width: 290px !important;
+    max-width: 82vw !important;
+    background-color: var(--color-surface, #ffffff) !important;
+    border-left: 1px solid var(--color-border, #e3e8ec) !important;
+    box-shadow: -8px 0 24px rgba(20, 33, 61, 0.12) !important;
+    z-index: 1060 !important;
+  }
+
+  /* Prevent awkward double scrollbar */
+  .offcanvas.app-mobile-drawer .offcanvas-body {
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: space-between !important;
+    height: 100% !important;
+  }
+
+  /* Mobile link tap targets */
+  .app-mobile-drawer .drawer-nav-item {
+    font-size: 0.95rem;
+    font-weight: 500;
+    color: var(--color-text-main) !important;
+    padding: 10px 14px !important;
+    border-radius: var(--radius-sm, 8px);
+    width: 100% !important;
+    text-decoration: none !important;
+    transition: background-color 0.15s ease;
+  }
+
+  .app-mobile-drawer .drawer-nav-item:hover,
+  .app-mobile-drawer .drawer-nav-item:active {
+    background-color: var(--color-surface-tint, #e9f6f4);
+    color: var(--color-primary-text, #096556) !important;
+  }
+
+  /* Force full width on drawer buttons regardless of global .btn min-height */
+  .app-mobile-drawer .drawer-btn {
+    width: 100% !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-weight: 600 !important;
+  }
+}
