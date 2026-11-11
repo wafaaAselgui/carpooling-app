@@ -78,6 +78,19 @@ main,
   border-bottom: 1px solid var(--color-border-subtle);
   color: var(--color-text-main);
 }
+
+/* Polish for TripCard */
+.trip-card {
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  border-radius: var(--radius-md, 12px) !important;
+}
+
+.trip-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md, 0 4px 14px rgba(20, 33, 61, 0.08)) !important;
+}
+
+
 /* ========================================================
    Mobile Offcanvas Drawer Polish
    ======================================================== */
@@ -139,3 +152,5 @@ main,
     font-weight: 600 !important;
   }
 }
+
+

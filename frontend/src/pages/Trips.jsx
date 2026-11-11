@@ -48,9 +48,6 @@ export default function Trips() {
   const [error, setError] = useState(null);
   const [activeTripId, setActiveTripId] = useState(null);
 
-  // Mobile viewport tab: 'list' | 'map'
-  const [mobileView, setMobileView] = useState("list");
-
   const [selectedDepCity, setSelectedDepCity] = useState("");
   const [selectedDestCity, setSelectedDestCity] = useState("");
   const [userRouteGeometry, setUserRouteGeometry] = useState(null);
@@ -144,7 +141,7 @@ export default function Trips() {
         }
       }
 
-      if (filters.seats && t.available_seats < parseInt(filters.seats)) return false;
+      if (filters.seats && t.available_seats < parseInt(filters.seats, 10)) return false;
       if (filters.max_price && t.price_per_seat > parseFloat(filters.max_price)) return false;
       if (filters.date && !t.departure_time.startsWith(filters.date)) return false;
 
@@ -153,18 +150,26 @@ export default function Trips() {
   }, [tripsWithRoutes, selectedDepCity, selectedDestCity, depCoords, destCoords, filters]);
 
   return (
-    <Container fluid className="py-3 py-md-4 px-3 px-lg-5" style={{ maxWidth: "1600px" }}>
+    <Container fluid className="py-2 py-md-4 px-3 px-lg-5" style={{ maxWidth: "1600px" }}>
       {/* Top Header */}
-      <div className="mb-3 mb-md-4">
-        <h2 className="fw-bold mb-1 fs-4 fs-md-2" style={{ color: "var(--color-text-main)", letterSpacing: "-0.02em" }}>
-          Route & Highway Discovery
-        </h2>
-        <p className="text-muted small mb-0">
-          Select origin and destination cities to discover shared rides matching your travel corridor.
-        </p>
+      <div className="d-flex align-items-center justify-content-between mb-2 mb-md-3">
+        <div>
+          <h2
+            className="fw-bold mb-0 fs-5 fs-md-3"
+            style={{ color: "var(--color-text-main)", letterSpacing: "-0.02em" }}
+          >
+            Discover Rides
+          </h2>
+          <p className="text-muted small mb-0 d-none d-sm-block">
+            Shared journeys matching your corridor across Morocco.
+          </p>
+        </div>
+        <span className="badge bg-light text-muted border d-lg-none small">
+          {matchedTrips.length} ride{matchedTrips.length === 1 ? "" : "s"}
+        </span>
       </div>
 
-      {/* Extracted Search & Filter Component */}
+      {/* Extracted Search & Filter Bar */}
       <SearchFilters
         groupedPlaces={groupedPlaces}
         selectedDepCity={selectedDepCity}
@@ -178,47 +183,13 @@ export default function Trips() {
 
       {error && <Alert variant="danger">{error}</Alert>}
 
-      {/* Mobile Segmented Control (Switches between List & Map on Phones) */}
-      <div className="d-flex d-lg-none justify-content-center mb-3">
-        <div
-          className="d-inline-flex p-1 rounded-3 border w-100 shadow-sm"
-          style={{ backgroundColor: "var(--color-surface)", borderColor: "var(--color-border)" }}
-        >
-          <button
-            type="button"
-            className="btn btn-sm flex-fill border-0 fw-semibold"
-            style={{
-              backgroundColor: mobileView === "list" ? "var(--color-primary)" : "transparent",
-              color: mobileView === "list" ? "#ffffff" : "var(--color-text-muted)",
-              borderRadius: "var(--radius-sm)",
-              transition: "all 0.15s ease",
-            }}
-            onClick={() => setMobileView("list")}
-          >
-            Rides ({matchedTrips.length})
-          </button>
-          <button
-            type="button"
-            className="btn btn-sm flex-fill border-0 fw-semibold"
-            style={{
-              backgroundColor: mobileView === "map" ? "var(--color-primary)" : "transparent",
-              color: mobileView === "map" ? "#ffffff" : "var(--color-text-muted)",
-              borderRadius: "var(--radius-sm)",
-              transition: "all 0.15s ease",
-            }}
-            onClick={() => setMobileView("map")}
-          >
-            Route Map
-          </button>
-        </div>
-      </div>
-
-      {/* Main Grid: Feed + Map */}
+      {/* Main Content Layout: Full-width feed on Mobile, Split Grid with Map on Desktop */}
       <Row className="g-3 g-lg-4">
-        {/* Left: Feed */}
+        {/* Trip Feed Column */}
         <Col
+          xs={12}
           lg={5}
-          className={`trip-feed-container ${mobileView === "map" ? "d-none d-lg-block" : "d-block"}`}
+          className="trip-feed-container"
           style={{ maxHeight: "78vh", overflowY: "auto", paddingRight: "0.5rem" }}
         >
           <div className="d-none d-lg-block mb-2 text-muted fw-medium small">
@@ -238,7 +209,7 @@ export default function Trips() {
               </span>
             </Card>
           ) : (
-            <div className="d-flex flex-column gap-2 gap-md-3">
+            <div className="d-flex flex-column gap-2">
               {matchedTrips.map((trip) => (
                 <div
                   key={trip.id}
@@ -256,18 +227,18 @@ export default function Trips() {
           )}
         </Col>
 
-        {/* Right: Map Preview */}
-        <Col
-          lg={7}
-          className={`${mobileView === "list" ? "d-none d-lg-block" : "d-block"}`}
-        >
+        {/* Desktop-Only Map Column (Completely hidden on screens < 992px) */}
+        <Col lg={7} className="d-none d-lg-block">
           <Card
             className="shadow-sm border-0 sticky-top overflow-hidden responsive-map-container"
             style={{ top: "1rem", borderRadius: "var(--radius-md)" }}
           >
             <div
               className="px-3 py-2 d-flex justify-content-between align-items-center small border-bottom"
-              style={{ backgroundColor: "var(--color-surface)", borderColor: "var(--color-border-subtle)" }}
+              style={{
+                backgroundColor: "var(--color-surface)",
+                borderColor: "var(--color-border-subtle)",
+              }}
             >
               <span className="fw-semibold text-muted text-truncate me-2">
                 {selectedDepCity && selectedDestCity
@@ -319,7 +290,8 @@ export default function Trips() {
                 )}
 
                 {matchedTrips.map((trip) => {
-                  const routeCoords = trip.geometry || (trip.dep && trip.dest ? [trip.dep, trip.dest] : null);
+                  const routeCoords =
+                    trip.geometry || (trip.dep && trip.dest ? [trip.dep, trip.dest] : null);
                   if (!routeCoords) return null;
 
                   const isHighlighted = activeTripId === trip.id;
@@ -328,13 +300,17 @@ export default function Trips() {
                       key={trip.id}
                       positions={routeCoords}
                       pathOptions={{
-                        color: isHighlighted ? "var(--color-primary)" : "var(--color-text-subtle)",
+                        color: isHighlighted
+                          ? "var(--color-primary)"
+                          : "var(--color-text-subtle)",
                         weight: isHighlighted ? 5 : 2.5,
                         opacity: isHighlighted ? 1 : 0.45,
                       }}
                     >
                       <Popup>
-                        <strong>{trip.departure_city} → {trip.destination_city}</strong>
+                        <strong>
+                          {trip.departure_city} → {trip.destination_city}
+                        </strong>
                         <br />
                         Price: {trip.price_per_seat} MAD / seat
                       </Popup>
