@@ -82,6 +82,11 @@ main,
    Mobile Offcanvas Drawer Polish
    ======================================================== */
 @media (max-width: 991.98px) {
+  .drawer-auth-section {
+    border-top: 1px solid var(--color-border, #e3e8ec);
+    margin-top: 1.5rem;
+    padding-top: 1rem;
+  }
   /* Force the drawer flush against the right edge of the screen */
   .offcanvas.app-mobile-drawer {
     position: fixed !important;

@@ -24,13 +24,15 @@ export default function AppNavbar() {
       onToggle={setExpanded}
       className="app-navbar-glass sticky-top"
     >
-      <Container>
+      {/* Fluid container matching the 1600px page grid */}
+      <Container fluid className="px-3 px-lg-5" style={{ maxWidth: "1600px" }}>
+        
         {/* Brand Logo */}
         <Navbar.Brand
           as={Link}
           to="/"
           onClick={closeMenu}
-          className="d-flex align-items-center fw-bold text-dark me-2 me-lg-4"
+          className="d-flex align-items-center fw-bold text-dark me-3 me-lg-4"
         >
           <span className="brand-mark me-2">
             <svg
@@ -53,18 +55,18 @@ export default function AppNavbar() {
           </span>
         </Navbar.Brand>
 
-        {/* Mobile Header Bell (Quick access before opening menu) */}
+        {/* Mobile Header Bell (Quick access before opening drawer) */}
         <div className="d-flex align-items-center gap-2 ms-auto me-2 d-lg-none">
           {user && <NotificationBell />}
         </div>
 
-        {/* Hamburger Toggle */}
+        {/* Mobile Hamburger Toggle */}
         <Navbar.Toggle
           aria-controls="main-offcanvas-navbar"
           className="border-0 shadow-none p-1"
         />
 
-        {/* Offcanvas Drawer */}
+        {/* Offcanvas Drawer on Mobile, Inline Bar on Desktop */}
         <Navbar.Offcanvas
           id="main-offcanvas-navbar"
           aria-labelledby="main-offcanvas-label"
@@ -93,10 +95,10 @@ export default function AppNavbar() {
             </Offcanvas.Title>
           </Offcanvas.Header>
 
-          <Offcanvas.Body className="p-4 p-lg-0">
-            {/* Primary Nav Links */}
-            <Nav className="flex-column flex-lg-row align-items-stretch align-items-lg-center me-lg-auto gap-1 w-100 w-lg-auto">
-              <Nav.Link as={Link} to="/" onClick={closeMenu} className="drawer-nav-item">
+          <Offcanvas.Body className="d-flex flex-column flex-lg-row justify-content-between p-4 p-lg-0 w-100">
+            {/* Left / Primary Nav */}
+            <Nav className="flex-column flex-lg-row align-items-stretch align-items-lg-center me-lg-auto gap-1">
+              <Nav.Link as={Link} to="/" onClick={closeMenu} className="drawer-nav-item py-2 py-lg-1">
                 Browse Rides
               </Nav.Link>
 
@@ -106,7 +108,7 @@ export default function AppNavbar() {
                     as={Link}
                     to="/create-trip"
                     onClick={closeMenu}
-                    className="drawer-nav-item d-flex align-items-center justify-content-between justify-content-lg-start gap-2"
+                    className="drawer-nav-item d-flex align-items-center justify-content-between justify-content-lg-start gap-2 py-2 py-lg-1"
                   >
                     <span>Offer a Ride</span>
                     {user.verification_status === "verified" ? (
@@ -118,11 +120,11 @@ export default function AppNavbar() {
                     )}
                   </Nav.Link>
 
-                  <Nav.Link as={Link} to="/my-bookings" onClick={closeMenu} className="drawer-nav-item">
+                  <Nav.Link as={Link} to="/my-bookings" onClick={closeMenu} className="drawer-nav-item py-2 py-lg-1">
                     My Bookings
                   </Nav.Link>
 
-                  <Nav.Link as={Link} to="/driver/trips" onClick={closeMenu} className="drawer-nav-item">
+                  <Nav.Link as={Link} to="/driver/trips" onClick={closeMenu} className="drawer-nav-item py-2 py-lg-1">
                     Driver Schedule
                   </Nav.Link>
 
@@ -131,7 +133,7 @@ export default function AppNavbar() {
                       as={Link}
                       to="/admin"
                       onClick={closeMenu}
-                      className="drawer-nav-item fw-semibold"
+                      className="drawer-nav-item fw-semibold py-2 py-lg-1"
                       style={{ color: "var(--color-primary-text)" }}
                     >
                       Admin Console
@@ -141,12 +143,11 @@ export default function AppNavbar() {
               )}
             </Nav>
 
-            {/* Auth / Profile Links (Sticks to bottom of drawer on mobile) */}
-            <div className="w-100 w-lg-auto mt-4 mt-lg-0 pt-3 pt-lg-0 border-top border-lg-0">
+            {/* Right / Auth & Account Nav */}
+            <Nav className="flex-column flex-lg-row align-items-stretch align-items-lg-center ms-lg-auto gap-2 gap-lg-3 drawer-auth-section">
               {user ? (
-                <div className="d-flex flex-column flex-lg-row align-items-stretch align-items-lg-center gap-2">
-                  {/* Desktop Bell */}
-                  <div className="d-none d-lg-block me-2">
+                <>
+                  <div className="d-none d-lg-block me-1">
                     <NotificationBell />
                   </div>
 
@@ -154,45 +155,58 @@ export default function AppNavbar() {
                     as={Link}
                     to="/profile"
                     onClick={closeMenu}
-                    className="drawer-nav-item"
+                    className="drawer-nav-item fw-medium py-2 py-lg-1 text-nowrap"
                   >
                     My Profile
                   </Nav.Link>
 
                   <Button
-                    onClick={handleLogout}
-                    variant="outline-danger"
                     size="sm"
-                    className="drawer-btn ms-lg-2"
+                    variant="outline-danger"
+                    onClick={handleLogout}
+                    className="w-100 w-lg-auto py-2 py-lg-1 text-nowrap"
                   >
                     Log Out
                   </Button>
-                </div>
+                </>
               ) : (
-                <div className="d-flex flex-column flex-lg-row align-items-stretch align-items-lg-center gap-2 w-100">
+                <div className="d-flex flex-column flex-lg-row align-items-stretch align-items-lg-center gap-2 gap-lg-3 w-100 w-lg-auto">
+                  {/* Clean text link on desktop */}
+                  <Nav.Link
+                    as={Link}
+                    to="/login"
+                    onClick={closeMenu}
+                    className="d-none d-lg-inline-flex align-items-center fw-medium text-dark px-2 text-nowrap"
+                  >
+                    Log In
+                  </Nav.Link>
+
+                  {/* Button on mobile drawer */}
                   <Button
                     as={Link}
                     to="/login"
                     onClick={closeMenu}
                     variant="outline-secondary"
                     size="sm"
-                    className="drawer-btn"
+                    className="d-lg-none w-100 py-2 fw-medium"
                   >
                     Log In
                   </Button>
+
+                  {/* Sign Up CTA Button */}
                   <Button
                     as={Link}
                     to="/register"
                     onClick={closeMenu}
                     variant="primary"
                     size="sm"
-                    className="drawer-btn"
+                    className="w-100 w-lg-auto px-3 py-2 py-lg-1 fw-semibold text-nowrap"
                   >
                     Sign Up
                   </Button>
                 </div>
               )}
-            </div>
+            </Nav>
           </Offcanvas.Body>
         </Navbar.Offcanvas>
       </Container>
