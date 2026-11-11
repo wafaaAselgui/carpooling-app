@@ -1,10 +1,11 @@
 import { useEffect, useState, useMemo } from "react";
-import { Container, Row, Col, Form, Card, Alert, Spinner } from "react-bootstrap";
+import { Container, Row, Col, Card, Alert, Spinner } from "react-bootstrap";
 import { MapContainer, TileLayer, Marker, Popup, Polyline } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 
 import TripCard from "../components/TripCard";
+import SearchFilters from "../components/SearchFilters";
 import { getTrips } from "../services/trip";
 import { MOROCCO_PLACES, findPlaceCoords } from "../data/moroccoPlaces";
 import { fetchDrivingRoute, isRouteCompatible } from "../utils/geoUtils";
@@ -47,7 +48,7 @@ export default function Trips() {
   const [error, setError] = useState(null);
   const [activeTripId, setActiveTripId] = useState(null);
 
-  // Mobile viewport view tab: 'list' | 'map'
+  // Mobile viewport tab: 'list' | 'map'
   const [mobileView, setMobileView] = useState("list");
 
   const [selectedDepCity, setSelectedDepCity] = useState("");
@@ -110,10 +111,11 @@ export default function Trips() {
     }
   }, [depCoords, destCoords]);
 
-  const handleClearLocations = () => {
+  const handleResetAll = () => {
     setSelectedDepCity("");
     setSelectedDestCity("");
     setUserRouteGeometry(null);
+    setFilters({ date: "", seats: "", max_price: "" });
   };
 
   const matchedTrips = useMemo(() => {
@@ -162,108 +164,21 @@ export default function Trips() {
         </p>
       </div>
 
-      {/* Filter Toolbar */}
-      <Card className="mb-3 mb-md-4 shadow-sm border-0">
-        <Card.Body className="p-3 p-md-4">
-          <Row className="g-2 g-md-3 align-items-end">
-            <Col xs={12} sm={6} lg={3}>
-              <Form.Label className="small fw-semibold text-muted mb-1 d-flex align-items-center gap-1">
-                <span style={{ width: 7, height: 7, borderRadius: "50%", backgroundColor: "var(--color-primary)" }} />
-                Departure City
-              </Form.Label>
-              <Form.Select
-                size="sm"
-                value={selectedDepCity}
-                onChange={(e) => setSelectedDepCity(e.target.value)}
-              >
-                <option value="">All Origins</option>
-                {Object.entries(groupedPlaces).map(([region, places]) => (
-                  <optgroup key={`feed-dep-${region}`} label={region}>
-                    {places.map((p) => (
-                      <option key={`feed-dep-${p.name}`} value={p.name}>
-                        {p.name}
-                      </option>
-                    ))}
-                  </optgroup>
-                ))}
-              </Form.Select>
-            </Col>
-
-            <Col xs={12} sm={6} lg={3}>
-              <Form.Label className="small fw-semibold text-muted mb-1 d-flex align-items-center gap-1">
-                <span style={{ width: 7, height: 7, borderRadius: "50%", backgroundColor: "var(--color-danger)" }} />
-                Destination City
-              </Form.Label>
-              <Form.Select
-                size="sm"
-                value={selectedDestCity}
-                onChange={(e) => setSelectedDestCity(e.target.value)}
-              >
-                <option value="">All Destinations</option>
-                {Object.entries(groupedPlaces).map(([region, places]) => (
-                  <optgroup key={`feed-dest-${region}`} label={region}>
-                    {places.map((p) => (
-                      <option
-                        key={`feed-dest-${p.name}`}
-                        value={p.name}
-                        disabled={p.name === selectedDepCity}
-                      >
-                        {p.name}
-                      </option>
-                    ))}
-                  </optgroup>
-                ))}
-              </Form.Select>
-            </Col>
-
-            <Col xs={6} sm={4} lg={2}>
-              <Form.Label className="small fw-semibold text-muted mb-1">Departure Date</Form.Label>
-              <Form.Control
-                size="sm"
-                type="date"
-                value={filters.date}
-                onChange={(e) => setFilters({ ...filters, date: e.target.value })}
-              />
-            </Col>
-
-            <Col xs={6} sm={4} lg={2}>
-              <Form.Label className="small fw-semibold text-muted mb-1">Min. Seats</Form.Label>
-              <Form.Select
-                size="sm"
-                value={filters.seats}
-                onChange={(e) => setFilters({ ...filters, seats: e.target.value })}
-              >
-                <option value="">Any</option>
-                <option value="1">1 seat</option>
-                <option value="2">2 seats</option>
-                <option value="3">3+ seats</option>
-              </Form.Select>
-            </Col>
-
-            <Col xs={12} sm={4} lg={2} className="d-flex justify-content-lg-end mt-2 mt-sm-0">
-              <button
-                size="sm"
-                className="ms-lg-2  w-100 btn .btn-accent"
-                style={{
-                    color: "var(--color-accent-subtle)",
-                    backgroundColor:"var(--brand-amber)",
-                    fontWeight:"bold"
-                  }}
-                onClick={() => {
-                  handleClearLocations();
-                  setFilters({ date: "", seats: "", max_price: "" });
-                }}
-              >
-                Reset All
-              </button>
-            </Col>
-          </Row>
-        </Card.Body>
-      </Card>
+      {/* Extracted Search & Filter Component */}
+      <SearchFilters
+        groupedPlaces={groupedPlaces}
+        selectedDepCity={selectedDepCity}
+        setSelectedDepCity={setSelectedDepCity}
+        selectedDestCity={selectedDestCity}
+        setSelectedDestCity={setSelectedDestCity}
+        filters={filters}
+        setFilters={setFilters}
+        onReset={handleResetAll}
+      />
 
       {error && <Alert variant="danger">{error}</Alert>}
 
-      {/* Mobile-Only Segmented Control (Switches between List & Map on Phones) */}
+      {/* Mobile Segmented Control (Switches between List & Map on Phones) */}
       <div className="d-flex d-lg-none justify-content-center mb-3">
         <div
           className="d-inline-flex p-1 rounded-3 border w-100 shadow-sm"
