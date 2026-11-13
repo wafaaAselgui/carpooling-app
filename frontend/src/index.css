@@ -260,6 +260,47 @@ a.btn-outline-danger {
   font-weight: 500 !important;
 }
 
+/* Prevent global link underline from bleeding into <a> tags styled as buttons */
+a.btn:hover,
+a.btn:focus {
+  text-decoration: none !important;
+}
+
+/* Outline secondary (e.g., "Back to Rides", "Cancel", "Log In") */
+.btn-outline-secondary,
+button.btn-outline-secondary,
+a.btn-outline-secondary {
+  color: var(--color-text-main) !important;
+  border-color: var(--color-border-strong) !important;
+  background-color: var(--color-surface) !important;
+  font-weight: 500 !important;
+}
+
+.btn-outline-secondary:hover,
+.btn-outline-secondary:focus,
+.btn-outline-secondary:active {
+  background-color: var(--color-surface-tint) !important;
+  border-color: var(--color-primary) !important;
+  color: var(--color-primary-text) !important;
+}
+
+/* Light / Ghost buttons (e.g., "Clear", swap icon button) */
+.btn-light,
+button.btn-light,
+a.btn-light {
+  color: var(--color-text-muted) !important;
+  background-color: var(--color-surface) !important;
+  border-color: var(--color-border) !important;
+}
+
+.btn-light:hover,
+.btn-light:focus,
+.btn-light:active {
+  background-color: var(--color-surface-tint) !important;
+  border-color: var(--brand-teal-mist) !important;
+  color: var(--color-primary-text) !important;
+}
+
 .btn-outline-danger:hover,
 .btn-outline-danger:focus,
 .btn-outline-danger:active {
