@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import AppNavbar from "./components/Navbar";
-import './App.css'
+import Footer from "./components/Footer";
+import "./App.css";
 import Trips from "./pages/Trips";
 import TripDetails from "./pages/TripDetails";
 import MyBookings from "./pages/MyBooking";
@@ -20,59 +21,63 @@ function App() {
     <BrowserRouter>
       <AppNavbar />
 
-      <Routes>
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-        <Route path="/" element={<Trips />} />
-        <Route path="/trips/:id" element={<TripDetails />} />
-        <Route path="/users/:id/profile" element={<UserProfile />} />
+      <main className="flex-grow-1">
+        <Routes>
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="/" element={<Trips />} />
+          <Route path="/trips/:id" element={<TripDetails />} />
+          <Route path="/users/:id/profile" element={<UserProfile />} />
 
-        {/* Protected Routes */}
-        <Route
-          path="/profile"
-          element={
-            <ProtectedRoute>
-              <Profile />
-            </ProtectedRoute>
-          }
-        />
+          {/* Protected Routes */}
+          <Route
+            path="/profile"
+            element={
+              <ProtectedRoute>
+                <Profile />
+              </ProtectedRoute>
+            }
+          />
 
-        <Route
-          path="/my-bookings"
-          element={
-            <ProtectedRoute>
-              <MyBookings />
-            </ProtectedRoute>
-          }
-        />
+          <Route
+            path="/my-bookings"
+            element={
+              <ProtectedRoute>
+                <MyBookings />
+              </ProtectedRoute>
+            }
+          />
 
-        <Route
-          path="/create-trip"
-          element={
-            <ProtectedRoute>
-              <CreateTrip />
-            </ProtectedRoute>
-          }
-        />
+          <Route
+            path="/create-trip"
+            element={
+              <ProtectedRoute>
+                <CreateTrip />
+              </ProtectedRoute>
+            }
+          />
 
-        <Route
-          path="/driver/trips"
-          element={
-            <ProtectedRoute>
-              <DriverTrips />
-            </ProtectedRoute>
-          }
-        />
+          <Route
+            path="/driver/trips"
+            element={
+              <ProtectedRoute>
+                <DriverTrips />
+              </ProtectedRoute>
+            }
+          />
 
-        <Route
-          path="/admin"
-          element={
-            <AdminRoute>
-              <AdminDashboard />
-            </AdminRoute>
-          }
-        />
-      </Routes>
+          <Route
+            path="/admin"
+            element={
+              <AdminRoute>
+                <AdminDashboard />
+              </AdminRoute>
+            }
+          />
+        </Routes>
+      </main>
+
+      <Footer />
     </BrowserRouter>
   );
 }
