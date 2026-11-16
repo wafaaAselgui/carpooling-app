@@ -1,5 +1,16 @@
-import { useEffect, useState } from "react";
-import { Container, Card, Table, Button, Alert, Spinner, Image, Modal, Form } from "react-bootstrap";
+import { useEffect, useState, useMemo } from "react";
+import {
+  Container,
+  Card,
+  Table,
+  Button,
+  Alert,
+  Spinner,
+  Image,
+  Modal,
+  Form,
+  Badge,
+} from "react-bootstrap";
 import { Link } from "react-router-dom";
 import api from "../services/api";
 import { respondToBooking } from "../services/booking";
@@ -8,17 +19,29 @@ import { useAuth } from "../context/AuthContext";
 
 function StarRatingInputs({ value, onChange }) {
   return (
-    <div className="d-flex align-items-center gap-1 justify-content-center">
+    <div className="d-flex align-items-center gap-2 justify-content-center">
       {[1, 2, 3, 4, 5].map((star) => (
         <button
           key={star}
           type="button"
-          className="btn p-1 border-0 bg-transparent"
+          className="btn p-1 border-0 bg-transparent shadow-none"
           onClick={() => onChange(star)}
-          style={{ color: star <= value ? "var(--color-warning)" : "var(--color-border)" }}
+          style={{
+            color: star <= value ? "var(--color-accent)" : "var(--color-border-strong)",
+            transition: "transform 0.1s ease",
+          }}
           aria-label={`Rate ${star} star`}
         >
-          <svg width="22" height="22" viewBox="0 0 24 24" fill={star <= value ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <svg
+            width="28"
+            height="28"
+            viewBox="0 0 24 24"
+            fill={star <= value ? "currentColor" : "none"}
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
             <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
           </svg>
         </button>
@@ -35,13 +58,26 @@ export default function DriverTrips() {
   const [feedback, setFeedback] = useState(null);
   const [error, setError] = useState(null);
 
+  // Filter tab: 'all' | 'upcoming' | 'completed' | 'cancelled'
+  const [activeTab, setActiveTab] = useState("all");
+
+  // Status Confirmation Modal state (replaces window.confirm)
+  const [statusModal, setStatusModal] = useState({
+    show: false,
+    tripId: null,
+    newStatus: null,
+    routeLabel: "",
+  });
+  const [updatingStatus, setUpdatingStatus] = useState(false);
+
+  // Review Modal state
   const [showReviewModal, setShowReviewModal] = useState(false);
   const [selectedBooking, setSelectedBooking] = useState(null);
   const [reviewForm, setReviewForm] = useState({ rating: 5, comment: "" });
   const [submittingReview, setSubmittingReview] = useState(false);
 
   const backendBase = import.meta.env.VITE_API_URL
-    ? import.meta.env.VITE_API_URL.replace("/api", "")
+    ? import.meta.env.VITE_API_URL.replace(/\/api\/?$/, "")
     : "http://localhost:8000";
 
   const loadDriverTrips = async () => {
@@ -51,7 +87,7 @@ export default function DriverTrips() {
       const res = await api.get("/driver/trips", {
         headers: { Authorization: `Bearer ${token}` },
       });
-      setTrips(res.data);
+      setTrips(Array.isArray(res.data) ? res.data : res.data?.data || []);
     } catch {
       setError("Failed to load your offered trips.");
     } finally {
@@ -63,13 +99,31 @@ export default function DriverTrips() {
     loadDriverTrips();
   }, []);
 
+  // Tab counts & filtered trips
+  const counts = useMemo(() => {
+    return {
+      all: trips.length,
+      upcoming: trips.filter((t) => t.status === "scheduled" || t.status === "in_progress").length,
+      completed: trips.filter((t) => t.status === "completed").length,
+      cancelled: trips.filter((t) => t.status === "cancelled").length,
+    };
+  }, [trips]);
+
+  const filteredTrips = useMemo(() => {
+    if (activeTab === "all") return trips;
+    if (activeTab === "upcoming") {
+      return trips.filter((t) => t.status === "scheduled" || t.status === "in_progress");
+    }
+    return trips.filter((t) => t.status === activeTab);
+  }, [trips, activeTab]);
+
   const handleBookingResponse = async (bookingId, action) => {
     setActionLoading(bookingId);
     setFeedback(null);
     setError(null);
     try {
       const res = await respondToBooking(bookingId, action);
-      setFeedback(res.message);
+      setFeedback(res.message || `Booking ${action}ed.`);
       await loadDriverTrips();
     } catch (err) {
       setError(err.response?.data?.message || "Failed to process booking request.");
@@ -78,8 +132,18 @@ export default function DriverTrips() {
     }
   };
 
-  const handleStatusChange = async (tripId, newStatus) => {
-    if (!window.confirm(`Are you sure you want to mark this trip as ${newStatus}?`)) return;
+  const promptStatusChange = (trip, newStatus) => {
+    setStatusModal({
+      show: true,
+      tripId: trip.id,
+      newStatus,
+      routeLabel: `${trip.departure_city} → ${trip.destination_city}`,
+    });
+  };
+
+  const confirmStatusChange = async () => {
+    const { tripId, newStatus } = statusModal;
+    setUpdatingStatus(true);
     setFeedback(null);
     setError(null);
     try {
@@ -89,10 +153,14 @@ export default function DriverTrips() {
         { status: newStatus },
         { headers: { Authorization: `Bearer ${token}` } }
       );
+      setStatusModal({ show: false, tripId: null, newStatus: null, routeLabel: "" });
       setFeedback(`Trip status updated to ${newStatus}.`);
       await loadDriverTrips();
     } catch (err) {
       setError(err.response?.data?.message || "Failed to update trip status.");
+      setStatusModal({ show: false, tripId: null, newStatus: null, routeLabel: "" });
+    } finally {
+      setUpdatingStatus(false);
     }
   };
 
@@ -115,7 +183,8 @@ export default function DriverTrips() {
       setFeedback(`Review submitted for passenger ${selectedBooking?.user?.name || ""}.`);
       await loadDriverTrips();
     } catch (err) {
-      alert(err.response?.data?.message || "Failed to submit review.");
+      setError(err.response?.data?.message || "Failed to submit review.");
+      setShowReviewModal(false);
     } finally {
       setSubmittingReview(false);
     }
@@ -129,7 +198,11 @@ export default function DriverTrips() {
         return (
           <span
             className="badge px-2 py-1"
-            style={{ backgroundColor: "var(--color-warning-subtle)", color: "var(--color-warning)", border: "1px solid rgba(138, 90, 0, 0.2)" }}
+            style={{
+              backgroundColor: "var(--color-warning-subtle)",
+              color: "var(--color-warning)",
+              border: "1px solid rgba(138, 90, 0, 0.25)",
+            }}
           >
             Pending
           </span>
@@ -151,7 +224,11 @@ export default function DriverTrips() {
         return (
           <span
             className="badge px-2 py-1"
-            style={{ backgroundColor: "var(--color-warning-subtle)", color: "var(--color-warning)", border: "1px solid rgba(138, 90, 0, 0.2)" }}
+            style={{
+              backgroundColor: "var(--color-warning-subtle)",
+              color: "var(--color-warning)",
+              border: "1px solid rgba(138, 90, 0, 0.25)",
+            }}
           >
             In Progress
           </span>
@@ -166,9 +243,13 @@ export default function DriverTrips() {
   };
 
   const getPassengerAvatar = (passenger) => {
-    if (passenger?.avatar_url) return passenger.avatar_url;
-    if (passenger?.avatar_path) return `${backendBase}/storage/${passenger.avatar_path}`;
-    return `https://ui-avatars.com/api/?name=${encodeURIComponent(passenger?.name || "Passenger")}&background=e31b6d&color=fff`;
+    if (passenger?.avatar_url?.trim()) return passenger.avatar_url;
+    if (passenger?.avatar_path?.trim()) {
+      return `${backendBase}/storage/${passenger.avatar_path.replace(/^\/+/, "")}`;
+    }
+    return `https://ui-avatars.com/api/?name=${encodeURIComponent(
+      passenger?.name || "Passenger"
+    )}&background=0b7f70&color=fff`;
   };
 
   if (loading) {
@@ -182,17 +263,91 @@ export default function DriverTrips() {
 
   return (
     <Container fluid className="py-3 py-md-4 px-3 px-lg-5" style={{ maxWidth: "1200px" }}>
-      <div className="mb-3 mb-md-4">
-        <h2 className="fw-bold mb-1 fs-4 fs-md-2">Driver Schedule</h2>
-        <p className="text-muted small mb-0">Manage passenger booking requests, track available capacity, and review completed journeys.</p>
+      {/* Top Header with Quick Action */}
+      <div className="d-flex flex-column flex-sm-row justify-content-between align-items-stretch align-items-sm-center gap-2 mb-3 mb-md-4">
+        <div>
+          <h2
+            className="fw-bold mb-1 fs-4 fs-md-2"
+            style={{ color: "var(--color-text-main)", letterSpacing: "-0.02em" }}
+          >
+            Driver Schedule
+          </h2>
+          <p className="text-muted small mb-0">
+            Manage passenger requests, track capacity, and review completed rides.
+          </p>
+        </div>
+
+        <Button
+          as={Link}
+          to="/create-trip"
+          size="sm"
+          className="btn-accent align-self-stretch align-self-sm-auto px-3 py-2 d-inline-flex align-items-center justify-content-center gap-1 flex-shrink-0"
+        >
+          <svg
+            width="15"
+            height="15"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.4"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <line x1="12" y1="5" x2="12" y2="19" />
+            <line x1="5" y1="12" x2="19" y2="12" />
+          </svg>
+          <span>Offer a Ride</span>
+        </Button>
       </div>
+
+      {/* Horizontal Scrollable Status Filter Tabs */}
+      {trips.length > 0 && (
+        <div className="d-flex align-items-center gap-2 overflow-auto pb-2 mb-3">
+          {[
+            { key: "all", label: "All Rides", count: counts.all },
+            { key: "upcoming", label: "Upcoming", count: counts.upcoming },
+            { key: "completed", label: "Completed", count: counts.completed },
+            { key: "cancelled", label: "Cancelled", count: counts.cancelled },
+          ].map((tab) => {
+            const isActive = activeTab === tab.key;
+            return (
+              <button
+                key={tab.key}
+                type="button"
+                onClick={() => setActiveTab(tab.key)}
+                className="btn btn-sm rounded-pill px-3 py-1 d-inline-flex align-items-center gap-2 text-nowrap border"
+                style={{
+                  backgroundColor: isActive ? "var(--color-primary)" : "var(--color-surface)",
+                  color: isActive ? "#ffffff" : "var(--color-text-muted)",
+                  borderColor: isActive ? "var(--color-primary)" : "var(--color-border)",
+                  fontWeight: isActive ? 600 : 500,
+                }}
+              >
+                <span>{tab.label}</span>
+                <Badge
+                  bg={isActive ? "light" : "secondary"}
+                  text={isActive ? "dark" : "light"}
+                  pill
+                  style={{ fontSize: "10.5px" }}
+                >
+                  {tab.count}
+                </Badge>
+              </button>
+            );
+          })}
+        </div>
+      )}
 
       {feedback && (
         <Alert
           dismissible
           onClose={() => setFeedback(null)}
           className="mb-3"
-          style={{ backgroundColor: "var(--color-success-subtle)", color: "var(--color-success)", border: "none" }}
+          style={{
+            backgroundColor: "var(--color-success-subtle)",
+            color: "var(--color-success)",
+            border: "none",
+          }}
         >
           {feedback}
         </Alert>
@@ -203,7 +358,11 @@ export default function DriverTrips() {
           dismissible
           onClose={() => setError(null)}
           className="mb-3"
-          style={{ backgroundColor: "var(--color-danger-subtle)", color: "var(--color-danger)", border: "none" }}
+          style={{
+            backgroundColor: "var(--color-danger-subtle)",
+            color: "var(--color-danger)",
+            border: "none",
+          }}
         >
           {error}
         </Alert>
@@ -213,30 +372,50 @@ export default function DriverTrips() {
         <Card className="border-0 shadow-sm p-4 p-md-5 text-center">
           <p className="text-muted mb-3">You have not published any rides yet.</p>
           <div>
-            <Button as={Link} to="/create-trip" variant="primary" size="sm">
+            <Button as={Link} to="/create-trip" variant="primary" size="sm" className="px-4">
               Offer a Ride
             </Button>
           </div>
         </Card>
+      ) : filteredTrips.length === 0 ? (
+        <Card className="border-0 shadow-sm p-4 text-center">
+          <p className="text-muted small mb-0">No rides in this category.</p>
+        </Card>
       ) : (
-        trips.map((trip) => {
+        filteredTrips.map((trip) => {
           const isCompleted = trip.status === "completed";
+          const pendingCount = (trip.bookings || []).filter((b) => b.status === "pending").length;
 
           return (
             <Card key={trip.id} className="shadow-sm border-0 mb-3 mb-md-4 overflow-hidden">
+              {/* Trip Header */}
               <Card.Header
-                className="bg-white py-3 border-bottom d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-2"
+                className="bg-white py-3 px-3 px-md-4 border-bottom d-flex flex-column flex-md-row justify-content-between align-items-stretch align-items-md-center gap-2"
                 style={{ borderColor: "var(--color-border-subtle)" }}
               >
-                <div>
-                  <h5 className="fw-semibold mb-1 text-capitalize fs-6 fs-md-5">
-                    {trip.departure_city}
-                    <span className="mx-2 text-muted" style={{ fontWeight: 300 }}>→</span>
-                    {trip.destination_city}
-                  </h5>
+                <div style={{ minWidth: 0 }} className="flex-grow-1">
+                  <div className="d-flex justify-content-between align-items-start gap-2">
+                    <h5 className="fw-bold mb-1 text-capitalize fs-6 fs-md-5 text-truncate">
+                      {trip.departure_city}
+                      <span className="mx-2 text-muted fw-light">→</span>
+                      {trip.destination_city}
+                    </h5>
+                    <div className="d-md-none flex-shrink-0">{renderTripBadge(trip.status)}</div>
+                  </div>
+
                   <div className="text-muted small d-flex align-items-center gap-2 flex-wrap">
-                    <span className="d-inline-flex align-items-center gap-1">
-                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <span className="d-inline-flex align-items-center gap-1 text-nowrap">
+                      <svg
+                        width="13"
+                        height="13"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        style={{ color: "var(--color-primary)" }}
+                      >
                         <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
                         <line x1="16" y1="2" x2="16" y2="6" />
                         <line x1="8" y1="2" x2="8" y2="6" />
@@ -247,26 +426,56 @@ export default function DriverTrips() {
                         timeStyle: "short",
                       })}
                     </span>
-                    <span>•</span>
-                    <span>
-                      {trip.vehicle?.brand} {trip.vehicle?.model} ({trip.vehicle?.license_plate})
-                    </span>
+                    {trip.vehicle && (
+                      <>
+                        <span>•</span>
+                        <span className="text-nowrap">
+                          {trip.vehicle.brand} {trip.vehicle.model} ({trip.vehicle.license_plate})
+                        </span>
+                      </>
+                    )}
                   </div>
                 </div>
 
-                <div className="d-flex align-items-center justify-content-between w-100 w-md-auto gap-3 pt-2 pt-md-0 border-top border-md-top-0" style={{ borderColor: "var(--color-border-subtle)" }}>
-                  <span className="small text-muted">
-                    Capacity: <strong>{trip.available_seats} / {trip.total_seats} free</strong>
+                {/* Capacity & Status */}
+                <div className="d-flex align-items-center justify-content-between justify-content-md-end gap-3 mt-1 mt-md-0 flex-shrink-0">
+                  <span
+                    className="small px-2 py-1 rounded-2 text-nowrap"
+                    style={{
+                      backgroundColor: "var(--color-surface-tint)",
+                      color: "var(--color-primary-text)",
+                    }}
+                  >
+                    Seats: <strong>{trip.available_seats} / {trip.total_seats} free</strong>
                   </span>
-                  {renderTripBadge(trip.status)}
+                  <div className="d-none d-md-block">{renderTripBadge(trip.status)}</div>
                 </div>
               </Card.Header>
 
+              {/* Passenger Requests */}
               <Card.Body className="p-3 p-md-4">
-                <h6 className="fw-semibold text-uppercase text-muted small mb-3">Passenger Requests</h6>
+                <div className="d-flex align-items-center justify-content-between mb-3">
+                  <h6 className="fw-semibold text-uppercase text-muted small mb-0">
+                    Passenger Requests ({trip.bookings?.length || 0})
+                  </h6>
+                  {pendingCount > 0 && (
+                    <span
+                      className="badge rounded-pill"
+                      style={{
+                        backgroundColor: "var(--color-accent-subtle)",
+                        color: "var(--color-accent-subtle-text)",
+                        fontSize: "11px",
+                      }}
+                    >
+                      {pendingCount} pending action
+                    </span>
+                  )}
+                </div>
 
                 {!trip.bookings || trip.bookings.length === 0 ? (
-                  <p className="text-muted small mb-0">No booking requests submitted for this ride yet.</p>
+                  <p className="text-muted small mb-0">
+                    No booking requests submitted for this ride yet.
+                  </p>
                 ) : (
                   <>
                     {/* 1. Mobile Cards View (< 768px) */}
@@ -280,47 +489,90 @@ export default function DriverTrips() {
                         return (
                           <div
                             key={`mobile-b-${booking.id}`}
-                            className="p-3 border rounded-3 bg-white"
-                            style={{ borderColor: "var(--color-border-subtle)" }}
+                            className="p-3 border rounded-3"
+                            style={{
+                              backgroundColor:
+                                booking.status === "pending"
+                                  ? "var(--color-warning-subtle)"
+                                  : "var(--color-canvas)",
+                              borderColor: "var(--color-border)",
+                            }}
                           >
-                            <div className="d-flex justify-content-between align-items-start mb-2">
-                              <div className="d-flex align-items-center gap-2">
-                                <Link to={`/users/${passenger?.id}/profile`}>
+                            {/* Passenger Info + State */}
+                            <div className="d-flex justify-content-between align-items-start gap-2 mb-2">
+                              <div className="d-flex align-items-center gap-2" style={{ minWidth: 0 }}>
+                                <Link
+                                  to={`/users/${passenger?.id}/profile`}
+                                  className="flex-shrink-0"
+                                >
                                   <Image
                                     src={getPassengerAvatar(passenger)}
                                     roundedCircle
-                                    width={36}
-                                    height={36}
+                                    width={38}
+                                    height={38}
                                     className="object-fit-cover border"
                                     style={{ borderColor: "var(--color-border)" }}
                                     alt={passenger?.name || "Passenger"}
+                                    onError={(e) => {
+                                      e.currentTarget.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(
+                                        passenger?.name || "Passenger"
+                                      )}&background=0b7f70&color=fff`;
+                                    }}
                                   />
                                 </Link>
-                                <div>
+                                <div style={{ minWidth: 0 }}>
                                   <Link
                                     to={`/users/${passenger?.id}/profile`}
-                                    className="fw-semibold text-decoration-none hover-primary d-block"
+                                    className="fw-semibold text-decoration-none d-block text-truncate"
                                     style={{ color: "var(--color-text-main)" }}
                                   >
                                     {passenger?.name || "Anonymous"}
                                   </Link>
-                                  <div className="text-muted" style={{ fontSize: "11px" }}>
-                                    {passenger?.phone || passenger?.email || "No contact info"}
-                                  </div>
+
+                                  {/* Direct Tap-to-Call or Email on Mobile */}
+                                  {passenger?.phone ? (
+                                    <a
+                                      href={`tel:${passenger.phone}`}
+                                      className="small d-inline-flex align-items-center gap-1 text-decoration-none"
+                                      style={{ fontSize: "12px" }}
+                                    >
+                                      {passenger.phone}
+                                    </a>
+                                  ) : passenger?.email ? (
+                                    <a
+                                      href={`mailto:${passenger.email}`}
+                                      className="small text-muted text-truncate d-block text-decoration-none"
+                                      style={{ fontSize: "11.5px" }}
+                                    >
+                                      {passenger.email}
+                                    </a>
+                                  ) : (
+                                    <span className="text-muted" style={{ fontSize: "11px" }}>
+                                      No contact info
+                                    </span>
+                                  )}
                                 </div>
                               </div>
-                              <div>{renderBookingBadge(booking.status)}</div>
+                              <div className="flex-shrink-0">{renderBookingBadge(booking.status)}</div>
                             </div>
 
-                            <div className="d-flex justify-content-between align-items-center py-2 border-top border-bottom my-2 small" style={{ borderColor: "var(--color-border-subtle)" }}>
+                            {/* Seats & Total Value */}
+                            <div
+                              className="d-flex justify-content-between align-items-center py-2 border-top my-2 small"
+                              style={{ borderColor: "var(--color-border)" }}
+                            >
                               <span className="text-muted">
-                                Seats: <strong>{booking.seats}</strong>
+                                Requested:{" "}
+                                <strong className="text-dark">
+                                  {booking.seats} seat{booking.seats > 1 ? "s" : ""}
+                                </strong>
                               </span>
                               <strong style={{ color: "var(--color-primary-text)" }}>
                                 {booking.seats * trip.price_per_seat} MAD
                               </strong>
                             </div>
 
+                            {/* Actions */}
                             {booking.status === "pending" ? (
                               <div className="d-flex gap-2 mt-2">
                                 <Button
@@ -347,7 +599,7 @@ export default function DriverTrips() {
                               </div>
                             ) : isCompleted && booking.status === "confirmed" ? (
                               driverAlreadyReviewed ? (
-                                <span className="badge bg-light text-muted border py-1 px-2 w-100 text-center">
+                                <span className="badge bg-light text-muted border py-2 px-2 w-100 text-center">
                                   Feedback Submitted
                                 </span>
                               ) : (
@@ -403,14 +655,17 @@ export default function DriverTrips() {
                                   <div>
                                     <Link
                                       to={`/users/${passenger?.id}/profile`}
-                                      className="fw-semibold text-decoration-none hover-primary"
+                                      className="fw-semibold text-decoration-none"
                                       style={{ color: "var(--color-text-main)" }}
                                     >
                                       {passenger?.name || "Anonymous"}
                                     </Link>
                                     {passenger?.verification_status === "verified" && (
                                       <div className="mt-1">
-                                        <span className="badge badge-sage py-0 px-1" style={{ fontSize: "10px" }}>
+                                        <span
+                                          className="badge badge-sage py-0 px-1"
+                                          style={{ fontSize: "10px" }}
+                                        >
                                           Verified ID
                                         </span>
                                       </div>
@@ -483,21 +738,25 @@ export default function DriverTrips() {
                 )}
               </Card.Body>
 
+              {/* Trip Status Actions */}
               {trip.status === "scheduled" && (
-                <Card.Footer className="bg-white border-top d-flex flex-column flex-sm-row justify-content-sm-end gap-2 py-3" style={{ borderColor: "var(--color-border-subtle)" }}>
+                <Card.Footer
+                  className="bg-white border-top d-flex flex-column flex-sm-row justify-content-sm-end gap-2 py-3 px-3 px-md-4"
+                  style={{ borderColor: "var(--color-border-subtle)" }}
+                >
                   <Button
                     size="sm"
                     variant="outline-primary"
-                    className="w-100 w-sm-auto"
-                    onClick={() => handleStatusChange(trip.id, "completed")}
+                    className="align-self-stretch align-self-sm-auto"
+                    onClick={() => promptStatusChange(trip, "completed")}
                   >
                     Mark Journey Completed
                   </Button>
                   <Button
                     size="sm"
                     variant="outline-danger"
-                    className="w-100 w-sm-auto"
-                    onClick={() => handleStatusChange(trip.id, "cancelled")}
+                    className="align-self-stretch align-self-sm-auto"
+                    onClick={() => promptStatusChange(trip, "cancelled")}
                   >
                     Cancel Ride
                   </Button>
@@ -507,6 +766,52 @@ export default function DriverTrips() {
           );
         })
       )}
+
+      {/* Status Confirmation Modal */}
+      <Modal
+        show={statusModal.show}
+        onHide={() => !updatingStatus && setStatusModal({ ...statusModal, show: false })}
+        centered
+      >
+        <Modal.Header closeButton>
+          <Modal.Title className="fs-6 fw-bold">
+            {statusModal.newStatus === "completed" ? "Complete Journey" : "Cancel Ride"}
+          </Modal.Title>
+        </Modal.Header>
+        <Modal.Body className="small">
+          Are you sure you want to mark <strong>{statusModal.routeLabel}</strong> as{" "}
+          <strong>{statusModal.newStatus}</strong>?
+          {statusModal.newStatus === "cancelled" && (
+            <p className="text-danger mt-2 mb-0">
+              All confirmed passengers will be notified of the cancellation.
+            </p>
+          )}
+        </Modal.Body>
+        <Modal.Footer className="d-flex flex-column flex-sm-row align-items-stretch align-items-sm-center gap-2">
+          <Button
+            variant="outline-secondary"
+            size="sm"
+            className="m-0"
+            disabled={updatingStatus}
+            onClick={() => setStatusModal({ ...statusModal, show: false })}
+          >
+            Keep Scheduled
+          </Button>
+          <Button
+            variant={statusModal.newStatus === "cancelled" ? "danger" : "primary"}
+            size="sm"
+            className="m-0"
+            disabled={updatingStatus}
+            onClick={confirmStatusChange}
+          >
+            {updatingStatus
+              ? "Updating..."
+              : statusModal.newStatus === "completed"
+              ? "Yes, Mark Completed"
+              : "Yes, Cancel Ride"}
+          </Button>
+        </Modal.Footer>
+      </Modal>
 
       {/* Driver -> Passenger Review Modal */}
       <Modal show={showReviewModal} onHide={() => setShowReviewModal(false)} centered>
@@ -518,14 +823,18 @@ export default function DriverTrips() {
         <Form onSubmit={handleReviewSubmit}>
           <Modal.Body className="p-3 p-md-4">
             <Form.Group className="mb-3 text-center">
-              <Form.Label className="small fw-semibold text-muted d-block">Passenger Rating</Form.Label>
+              <Form.Label className="small fw-semibold text-muted d-block">
+                Passenger Rating
+              </Form.Label>
               <StarRatingInputs
                 value={reviewForm.rating}
                 onChange={(r) => setReviewForm({ ...reviewForm, rating: r })}
               />
             </Form.Group>
             <Form.Group className="mb-2">
-              <Form.Label className="small fw-semibold text-muted">Feedback Comment (Optional)</Form.Label>
+              <Form.Label className="small fw-semibold text-muted">
+                Feedback Comment (Optional)
+              </Form.Label>
               <Form.Control
                 as="textarea"
                 rows={3}
@@ -535,15 +844,23 @@ export default function DriverTrips() {
               />
             </Form.Group>
           </Modal.Body>
-          <Modal.Footer className="flex-column flex-sm-row" style={{ borderColor: "var(--color-border-subtle)" }}>
-            <Button variant="outline-secondary" size="sm" className="w-100 w-sm-auto mb-2 mb-sm-0" onClick={() => setShowReviewModal(false)}>
+          <Modal.Footer
+            className="d-flex flex-column flex-sm-row align-items-stretch align-items-sm-center gap-2"
+            style={{ borderColor: "var(--color-border-subtle)" }}
+          >
+            <Button
+              variant="outline-secondary"
+              size="sm"
+              className="m-0"
+              onClick={() => setShowReviewModal(false)}
+            >
               Cancel
             </Button>
             <Button
               variant="primary"
               size="sm"
               type="submit"
-              className="w-100 w-sm-auto"
+              className="m-0"
               disabled={submittingReview}
             >
               {submittingReview ? "Submitting..." : "Submit Feedback"}
