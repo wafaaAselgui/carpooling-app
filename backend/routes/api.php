@@ -57,7 +57,8 @@ Route::middleware(['auth:sanctum', 'check.banned'])->group(function () {
     Route::post('/vehicles', [VehicleController::class, 'store']);
     Route::delete('/vehicles/{id}', [VehicleController::class, 'destroy']);
     Route::post('/vehicles/{id}/documents', [VehicleController::class, 'uploadDocuments']);
-
+    Route::post('/vehicles/{id}/photo', [VehicleController::class, 'updatePhoto']);
+    
     // Trips
     Route::post('/trips', [TripController::class, 'store']);
 

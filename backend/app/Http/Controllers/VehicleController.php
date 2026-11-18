@@ -34,6 +34,31 @@ class VehicleController extends Controller
     }
 
     /**
+     * Update only the vehicle photo without resetting verification status
+     */
+    public function updatePhoto(Request $request, $id)
+    {
+        $vehicle = $request->user()->vehicles()->findOrFail($id);
+
+        $request->validate([
+            'photo' => 'required|image|mimes:jpeg,png,jpg,webp|max:2048',
+        ]);
+
+        if ($vehicle->photo && Storage::disk('public')->exists($vehicle->photo)) {
+            Storage::disk('public')->delete($vehicle->photo);
+        }
+
+        $path = $request->file('photo')->store('vehicles', 'public');
+        $vehicle->update(['photo' => $path]);
+
+        return response()->json([
+            'message' => 'Vehicle photo updated successfully.',
+            'vehicle' => $vehicle,
+        ]);
+    }    
+
+    
+    /**
      * Upload car registration and insurance documents
      */
     public function uploadDocuments(Request $request, $id)

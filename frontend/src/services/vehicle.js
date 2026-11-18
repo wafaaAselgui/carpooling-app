@@ -40,3 +40,10 @@ export const deleteVehicle = async (id) => {
     const res = await api.delete(`/vehicles/${id}`, getHeaders());
     return res.data;
 };
+
+export const updateVehiclePhoto = async (vehicleId, photoFile) => {
+    const formData = new FormData();
+    formData.append("photo", photoFile);
+    const res = await api.post(`/vehicles/${vehicleId}/photo`, formData, getHeaders(true));
+    return res.data;
+};
