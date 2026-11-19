@@ -11,7 +11,7 @@ import Register from "./pages/Register";
 import DriverTrips from "./pages/DriverTrips";
 import Profile from "./pages/Profile";
 import UserProfile from "./pages/UserProfile";
-
+import Notifications from "./pages/Notifications";
 import ProtectedRoute from "./components/ProtectedRoute";
 import AdminDashboard from "./pages/AdminDashboard";
 import AdminRoute from "./components/AdminRoute";
@@ -65,7 +65,14 @@ function App() {
               </ProtectedRoute>
             }
           />
-
+          <Route
+            path="/notifications"
+            element={
+              <ProtectedRoute>
+                <Notifications />
+              </ProtectedRoute>
+            }
+          />
           <Route
             path="/admin"
             element={
