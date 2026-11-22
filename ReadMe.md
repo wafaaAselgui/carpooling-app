@@ -155,3 +155,5 @@ Running `php artisan migrate:fresh --seed` creates the following accounts for im
 | **Administrator** | `admin@carpool.ma` | `admin123` | Full administrative console access & moderation |
 | **Verified Driver** | `driver@carpool.ma` | `password123` | Verified Dacia Duster with active scheduled trips |
 
+## Website Preview
+<video controls src="carpooling.mp4" title="Title"></video>
